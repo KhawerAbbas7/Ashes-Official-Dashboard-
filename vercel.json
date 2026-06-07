@@ -9,8 +9,12 @@
       "dest": "/api/$1.py"
     },
     {
-      "src": "/match/(.*)",
+      "src": "/og/match/(.*)",
       "dest": "/api/og_match.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }

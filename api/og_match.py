@@ -11,7 +11,6 @@ class handler(BaseHTTPRequestHandler):
       req = urllib.request.Request(api_url)
       with urllib.request.urlopen(req) as res:
         data = res.read().decode()
-
     except:
       data = "Live match loading..."
 
