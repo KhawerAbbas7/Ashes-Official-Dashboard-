@@ -19,7 +19,7 @@ class handler(BaseHTTPRequestHandler):
       self.end_headers()
       self.wfile.write(spa_html)
       return
-    api_url = f"http://129.80.180.202:8000/api/matches/{match_id}"
+    api_url = f"http://129.80.180.202:8000/matches/{match_id}"
     try:
       req = urllib.request.Request(api_url)
       with urllib.request.urlopen(req, timeout=8) as res:
