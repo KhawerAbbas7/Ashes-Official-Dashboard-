@@ -7,7 +7,7 @@ import os
 from urllib.parse import urlparse, parse_qs
 def makeScorecard(data, inning_index=0):
   S = 1.3325714286
-  BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+  BASE_DIR = os.path.dirname(os.path.abspath(__file__))
   img = Image.open(os.path.join(BASE_DIR, "templates", "battingSummary.png")).convert("RGBA")
   draw = ImageDraw.Draw(img)
   font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "archivo.woff2"), int(65 * S))
@@ -43,7 +43,6 @@ def makeScorecard(data, inning_index=0):
   img.save(image_binary, 'PNG')
   image_binary.seek(0)
   return image_binary
-
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
     query_components = parse_qs(urlparse(self.path).query)
@@ -68,4 +67,3 @@ class handler(BaseHTTPRequestHandler):
       self.send_header('Content-type', 'text/plain')
       self.end_headers()
       self.wfile.write(f"Error: {str(e)}".encode('utf-8'))
-      
