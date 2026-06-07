@@ -1,4 +1,4 @@
-const BASE = "http://129.80.180.202:8000";
+const BASE = "/api";
 
 export const fetchMatches = async (query?: string, channelId?: string, guildId?: string, playerId?: string) => {
   const url = new URL(`${BASE}/matches/getrecent`);

@@ -14,10 +14,8 @@ export function Layout() {
       <div className="w-full max-w-[1080px] flex flex-col mt-4">
         <header className="flex flex-col md:flex-row items-center justify-between px-4 md:px-12 py-6 md:py-8 border-b border-ashes-border mb-6 md:mb-8 gap-6 md:gap-0">
           <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-ashes-red rounded-full flex items-center justify-center">
-              <div className="w-4 h-4 border-2 border-white rounded-sm rotate-45"></div>
-            </div>
-            <span className="font-bebas text-xl font-bold tracking-tight text-white m-0 p-0">ASHES</span>
+            <img src="https://cdn.discordapp.com/avatars/1443165621100740668/40ef4cf2ee6a72db2a5af55c231192bd.png?size=1024" alt="Ashes Logo" className="w-8 h-8 md:w-10 md:h-10 rounded-full" />
+            <span className="font-bebas text-2xl font-bold tracking-tight text-white m-0 p-0">ASHES</span>
           </Link>
           <nav className="flex flex-wrap justify-center gap-4 md:gap-10 font-sans text-[10px] md:text-xs font-medium uppercase tracking-[0.2em] text-ashes-very-muted">
             <Link to="/" className={getNavClass("/", true)}>Home</Link>
