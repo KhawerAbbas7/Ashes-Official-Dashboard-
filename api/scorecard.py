@@ -5,40 +5,59 @@ import urllib.request
 import json
 import os
 from urllib.parse import urlparse, parse_qs
-def makeScorecard(data, inning_index=0):
+def makeMatchSummary(data):
   S = 1.3325714286
   BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-  img = Image.open(os.path.join(BASE_DIR, "templates", "battingSummary.png")).convert("RGBA")
+  img = Image.open(os.path.join(BASE_DIR, "templates", "matchSummary.png")).convert("RGBA")
   draw = ImageDraw.Draw(img)
-  font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "archivo.woff2"), int(65 * S))
-  font2 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "ArchivoNarrowRegular.woff2"), int(32.7 * S))
-  font3 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "ArchivoNarrowRegular.woff2"), int(27 * S))
-  font4 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "archivo.woff2"), int(40 * S))
-  inning = data["innings"][inning_index]
-  draw.text((210, 15), inning["battingTeam"].upper(), font=font, fill="white")
-  y = 210.3
-  offset = 91.1
-  try:
-    overlay = Image.open(os.path.join(BASE_DIR, "templates", "NotOutLine.png")).convert("RGBA")
-  except:
-    overlay = None
-  for b in inning["batters"]:
-    name = b["playerName"].upper()[:15]
-    is_not_out = not b["dismissed"]
-    status_text = "NOT OUT" if is_not_out else "OUT"
-    r_w = font3.getlength(str(b["runs"]))
-    b_w = font3.getlength(str(b["balls"]))
-    if is_not_out and overlay:
-      img.paste(overlay, (74, int(y - 20)), overlay)
-    fill_color = "black" if is_not_out else "white"
-    draw.text((121, y), name, font=font2, fill=fill_color, stroke_width=0)
-    draw.text((645, y), status_text, font=font2, fill=fill_color)
-    draw.text((975.7 + 63.1 / 2 - r_w / 2, y + 5), str(b["runs"]), font=font3, fill=fill_color, stroke_width=0.5)
-    draw.text((1075.9 + 69.4 / 2 - b_w / 2, y + 5), str(b["balls"]), font=font3, fill=fill_color, stroke_width=0)
+  font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "archivo.woff2"), int(40*S))
+  font2 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "canvaSansRegular.woff2"), int(30*S))
+  font3 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "canvaSansRegular.woff2"), int(23*S))
+  font4 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "canvaSansRegular.woff2"), int(28*S))
+  font5 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "canvaSansBold.woff2"), int(28*S))
+  fonts = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "archivo.woff2"), int(28*S))
+  fontb = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "canvaSansBold.woff2"), int(24*S))
+  font7 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "archivo.woff2"), int(31*S))
+  t1 = data.get('teamAName', data['innings'][0]['battingTeam'] if data.get('innings') else 'TEAM A')
+  t2 = data.get('teamBName', data['innings'][0]['bowlingTeam'] if data.get('innings') else 'TEAM B')
+  draw.text((203.3, 139.4), f"{t1.upper()} VS {t2.upper()}", font=font2, fill='White')
+  y = 260
+  offset = 215.7
+  for i, inn in enumerate(data.get("innings", [])):
+    battingTeam = f"{inn['battingTeam'].upper()} {inn['total']}/{inn['wickets']}"
+    color = "#14f67c" if i % 2 == 0 else "#05a9e6"
+    draw.text((100, y), battingTeam, font=font, fill=color)
+    ino = inn.get("inningNo", i+1)
+    ord_s = "th" if 10 <= ino % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(ino % 10, "th")
+    innLabel = f"{ino}{ord_s} Inning".upper()
+    draw.text((1200 - font3.getlength(innLabel), y + 10), innLabel, font=font3, fill='White')
+    topBat = sorted(inn.get("batters", []), key=lambda x: x.get("runs", 0), reverse=True)[:2]
+    topBowl = sorted(inn.get("bowlers", []), key=lambda x: x.get("wickets", 0), reverse=True)[:2]
+    y2 = y
+    offset2 = 50
+    for k in range(2):
+      if k < len(topBat):
+        b = topBat[k]
+        name = b.get("playerName", "")[:15].upper()
+        runs = str(b.get("runs", 0))
+        balls = str(b.get("balls", 0))
+        draw.text((100, y2 + 60), name, font=font4, fill='White')
+        draw.text((475.8, y2 + 60), runs, font=fonts, fill='White')
+        l = fonts.getlength(runs) + 5
+        draw.text(((475.8 + l), y2 + 60), balls, font=fontb, fill='White')
+      if k < len(topBowl):
+        b = topBowl[k]
+        name = b.get("playerName", "")[:15].upper()
+        fig = f"{b.get('wickets', 0)}-{b.get('runs', 0)}"
+        draw.text((750, y2 + 60), name, font=font4, fill='White')
+        draw.text((1190 - font5.getlength(fig), y2 + 60), fig, font=font5, fill='White')
+      y2 += offset2
+    if i > 0: offset = 230
+    if i == 2: offset = 240
     y += offset
-  total_balls = inning["balls"]
-  draw.text((781.5, 1177.9), f"{total_balls//6}.{total_balls%6}", font=font4, fill="white")
-  draw.text((1050.1, 1177.9), f"{inning['total']}-{inning['wickets']}", font=font4, fill="white")
+  status = data.get("winner", "")
+  footer = f"{status}".upper() if status else "MATCH DRAWN"
+  draw.text(((1280 - font7.getlength(footer)) / 2, 1190), footer, font=font7, fill="black")
   image_binary = BytesIO()
   img.save(image_binary, 'PNG')
   image_binary.seek(0)
@@ -56,7 +75,7 @@ class handler(BaseHTTPRequestHandler):
       req = urllib.request.Request(api_url)
       with urllib.request.urlopen(req, timeout=8) as res:
         data = json.loads(res.read().decode())
-      img_io = makeScorecard(data)
+      img_io = makeMatchSummary(data)
       self.send_response(200)
       self.send_header('Content-type', 'image/png')
       self.send_header('Cache-Control', 'public, max-age=86400')
