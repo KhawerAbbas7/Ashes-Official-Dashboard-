@@ -1,7 +1,7 @@
 const BASE = "/api";
 
 export const fetchMatches = async (query?: string, channelId?: string, guildId?: string, playerId?: string) => {
-  const url = new URL(`${BASE}/matches/getrecent`);
+  const url = new URL(`${BASE}/matches/getrecent`, window.location.origin);
   url.searchParams.append("recent", "20");
   if (query) url.searchParams.append("query", query);
   if (channelId) url.searchParams.append("channelId", channelId);
