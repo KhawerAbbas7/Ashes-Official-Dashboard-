@@ -22,7 +22,7 @@ class handler(BaseHTTPRequestHandler):
       print(f"Fetch error: {e}")
       traceback.print_exc()
       data = "Live match loading..."
-    html_content = f"""<html><head><meta property="og:title" content="Ashes Match Live" /><meta property="og:description" content="{data}" /><meta property="og:image" content="https://ashesdbvercel.app/og/default.png" /><meta property="og:url" content="https://ashes-website2.vercel.app/match/{match_id}" /></head><body></body></html>"""
+    html_content = f"""<html><head><meta property="og:title" content="Ashes Match Live" /><meta property="og:description" content="{data}" /><meta property="og:image" content="https://cdn.discordapp.com/avatars/1443165621100740668/40ef4cf2ee6a72db2a5af55c231192bd.png" /><meta property="og:url" content="https://ashesdbvercel.vercel.app/match/{match_id}" /></head><body></body></html>"""
     self.send_response(200)
     self.send_header("Content-Type", "text/html")
     self.end_headers()
