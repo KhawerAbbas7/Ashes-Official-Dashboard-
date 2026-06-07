@@ -1,20 +1,12 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/**/*.py", "use": "@vercel/python" }
-  ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1.py"
+      "source": "/og/match/(.*)",
+      "destination": "/api/og_match"
     },
     {
-      "src": "/og/match/(.*)",
-      "dest": "/api/og_match.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
