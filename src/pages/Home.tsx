@@ -39,11 +39,11 @@ export function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="flex flex-col">
               <span className="font-bold text-white">Creator</span>
-              <span className="font-mono text-[10px] text-ashes-very-muted uppercase tracking-[0.2em] mt-1">Lead Developer</span>
+              <span className="font-mono text-[10px] text-ashes-very-muted uppercase tracking-[0.2em] mt-1">Lead Developer - Khawer Abbas</span>
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-white">Contributors</span>
-              <span className="font-mono text-[10px] text-ashes-very-muted uppercase tracking-[0.2em] mt-1">Community Team</span>
+              <span className="font-mono text-[10px] text-ashes-very-muted uppercase tracking-[0.2em] mt-1">Zuhair Asif, Dani, Slayer, Hamza</span>
             </div>
           </div>
         </div>
