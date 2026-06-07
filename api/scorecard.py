@@ -7,19 +7,19 @@ import os
 from urllib.parse import urlparse, parse_qs
 def makeScorecard(data, inning_index=0):
   S = 1.3325714286
-  base_dir = os.getcwd()
-  img = Image.open(os.path.join(base_dir, "templates", "battingSummary.png")).convert("RGBA")
+  BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+  img = Image.open(os.path.join(BASE_DIR, "templates", "battingSummary.png")).convert("RGBA")
   draw = ImageDraw.Draw(img)
-  font = ImageFont.truetype(os.path.join(base_dir, "fonts", "archivo.woff2"), int(65 * S))
-  font2 = ImageFont.truetype(os.path.join(base_dir, "fonts", "ArchivoNarrowRegular.woff2"), int(32.7 * S))
-  font3 = ImageFont.truetype(os.path.join(base_dir, "fonts", "ArchivoNarrowRegular.woff2"), int(27 * S))
-  font4 = ImageFont.truetype(os.path.join(base_dir, "fonts", "archivo.woff2"), int(40 * S))
+  font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "archivo.woff2"), int(65 * S))
+  font2 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "ArchivoNarrowRegular.woff2"), int(32.7 * S))
+  font3 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "ArchivoNarrowRegular.woff2"), int(27 * S))
+  font4 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "archivo.woff2"), int(40 * S))
   inning = data["innings"][inning_index]
   draw.text((210, 15), inning["battingTeam"].upper(), font=font, fill="white")
   y = 210.3
   offset = 91.1
   try:
-    overlay = Image.open(os.path.join(base_dir, "templates", "NotOutLine.png")).convert("RGBA")
+    overlay = Image.open(os.path.join(BASE_DIR, "templates", "NotOutLine.png")).convert("RGBA")
   except:
     overlay = None
   for b in inning["batters"]:
@@ -43,6 +43,7 @@ def makeScorecard(data, inning_index=0):
   img.save(image_binary, 'PNG')
   image_binary.seek(0)
   return image_binary
+
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
     query_components = parse_qs(urlparse(self.path).query)
