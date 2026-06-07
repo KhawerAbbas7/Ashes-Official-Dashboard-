@@ -1,6 +1,6 @@
 from http.server import BaseHTTPRequestHandler
 import urllib.request
-import html
+import html, json
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
     match_id = self.path.split("/")[-1].split("?")[0]
@@ -19,14 +19,15 @@ class handler(BaseHTTPRequestHandler):
       self.end_headers()
       self.wfile.write(spa_html)
       return
-    api_url = f"http://129.80.180.202:8000/match/{match_id}"
+    api_url = f"http://129.80.180.202:8000/api/match/{match_id}"
     try:
       req = urllib.request.Request(api_url)
       with urllib.request.urlopen(req, timeout=8) as res:
-        data = html.escape(" ".join(res.read().decode().split())[:250])
+        data = data = json.loads(res.read().decode())
     except:
       data = "Live match loading..."
-    html_content = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta property="og:title" content="Ashes Match Live" /><meta property="og:type" content="website" /><meta property="og:description" content="{data}" /><meta property="og:image" content="https://cdn.discordapp.com/avatars/1443165621100740668/40ef4cf2ee6a72db2a5af55c231192bd.png" /><meta property="og:url" content="https://{host}/match/{match_id}" /><meta name="twitter:card" content="summary_large_image"></head><body></body></html>"""
+      
+    html_content = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta property="og:title" content="Ashes | {data['teamAName']} Vs {data['teamBName']}" /><meta property="og:type" content="website" /><meta property="og:description" content="Guild: {data['guildName']}\nChannel {data['channelName']}\nWon: {data["winner"]}\nMVP: {data['mvp']['name']}" /><meta property="og:image" content="https://cdn.discordapp.com/avatars/1443165621100740668/40ef4cf2ee6a72db2a5af55c231192bd.png" /><meta property="og:url" content="https://{host}/match/{match_id}" /></head><body></body></html>"""
     self.send_response(200)
     self.send_header("Content-Type", "text/html")
     self.end_headers()
