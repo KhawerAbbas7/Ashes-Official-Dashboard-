@@ -44,7 +44,7 @@ export function Home() {
     <>
       <Helmet>
         <title>Ashes · Discord Cricket Bot</title>
-        <meta name="description" content="Ashes is the ultimate cricket simulation bot for Discord. Host matches, track leaderboards, and manage your servers cricket leagues." />
+        <meta name="description" content="Ashes is the ultimate test cricket bot for Discord. Host matches, Enjoy the intensity of ultimate form of cricket." />
         <meta property="og:title" content="Ashes · Discord Cricket Bot" />
         <meta property="og:description" content="Ashes is the ultimate cricket simulation bot for Discord." />
       </Helmet>
