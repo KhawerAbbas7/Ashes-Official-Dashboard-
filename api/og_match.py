@@ -5,6 +5,7 @@ import traceback
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
     match_id = self.path.split("/")[-1]
+    print(match_id)
     user_agent = self.headers.get("User-Agent", "").lower()
     bot_keywords = ["bot", "spider", "crawler", "facebookexternalhit", "twitterbot", "whatsapp", "telegram", "discordbot"]
     if not any(k in user_agent for k in bot_keywords):
