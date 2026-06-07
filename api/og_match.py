@@ -7,7 +7,7 @@ class handler(BaseHTTPRequestHandler):
     bot_keywords = ["bot", "spider", "crawler", "facebookexternalhit", "twitterbot", "whatsapp", "telegram", "discordbot"]
     if not any(k in user_agent for k in bot_keywords):
       self.send_response(302)
-      self.send_header("Location", f"https://ashes-website2.vercel.app/match/{match_id}")
+      self.send_header("Location", f"https://ashesdb.vercel.app/match/{match_id}")
       self.end_headers()
       return
     api_url = f"http://129.80.180.202:8000/match/{match_id}"
