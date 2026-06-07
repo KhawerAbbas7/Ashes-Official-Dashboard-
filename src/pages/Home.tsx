@@ -3,21 +3,39 @@ import { Helmet } from "react-helmet-async";
 const TEAM_MEMBERS = [
   {
     name: "Lead Developer",
-    username: "@developer",
+    username: "@92.97",
     role: "Creator & Lead Developer",
-    avatarUrl: "https://cdn.discordapp.com/avatars/1443165621100740668/40ef4cf2ee6a72db2a5af55c231192bd.png?size=1024"
+    avatarUrl: "https://cdn.discordapp.com/avatars/759713678013890560/2a996d48677d0c921786f3250859697c.png?size=1024"
   },
   {
-    name: "Contributor 1",
-    username: "@contributor1",
-    role: "Contributor",
-    avatarUrl: ""
+    name: "Zuhair Asif",
+    username: "@zuhair_asif",
+    role: "Moderator",
+    avatarUrl: "https://cdn.discordapp.com/avatars/882228764237508628/47ff74cdc7fd0e5c0075672057fae9ae.webp?size=4096"
   },
   {
-    name: "Contributor 2",
-    username: "@contributor2",
-    role: "Contributor",
-    avatarUrl: ""
+    name: "Dani",
+    username: "@no._.one15",
+    role: "Moderator and STUMPEX Developer",
+    avatarUrl: "https://cdn.discordapp.com/avatars/1244979225924993094/2fcc2cddd62c0cb3f4f7031e5c950de3.webp?size=1024"
+  },
+  {
+    name: "SLAYER",
+    username: "@slay3r699",
+    role: "Moderator",
+    avatarUrl: "https://cdn.discordapp.com/avatars/707195158864855112/b976343b71ede81998b9dada19403ded.webp?size=4096"
+  }
+  {
+    name: "Hamza",
+    username: "@hamzaaalalala",
+    role: "Moderator",
+    avatarUrl: "https://cdn.discordapp.com/avatars/700032580744904754/f041b68c32fe2d06069cebe28b2e6e0d.webp?size=4096"
+  }
+  {
+    name: "Aatiq",
+    username: "@.aatiq_",
+    role: "Moderator",
+    avatarUrl: "https://cdn.discordapp.com/avatars/915415308565622874/d86dafcf4c208eeedef02ab67ae70c26.webp?size=4096"
   }
 ];
 
