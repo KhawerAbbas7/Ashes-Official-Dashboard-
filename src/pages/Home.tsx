@@ -24,13 +24,13 @@ const TEAM_MEMBERS = [
     username: "@slay3r699",
     role: "Moderator",
     avatarUrl: "https://cdn.discordapp.com/avatars/707195158864855112/b976343b71ede81998b9dada19403ded.webp?size=4096"
-  }
+  },
   {
     name: "Hamza",
     username: "@hamzaaalalala",
     role: "Moderator",
     avatarUrl: "https://cdn.discordapp.com/avatars/700032580744904754/f041b68c32fe2d06069cebe28b2e6e0d.webp?size=4096"
-  }
+  },
   {
     name: "Aatiq",
     username: "@.aatiq_",
