@@ -21,7 +21,7 @@ def getResult(data):
       elif teamsScores[lastInn['battingTeam']] < teamsScores[lastInn['bowlingTeam']]: return f"{lastInn['bowlingTeam']} Won by {teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']]} Runs"
   elif lastInn['inningNo'] == 3 and folllowedOn:
     if lastInn['wickets'] == maxWickets:
-      return f"{lastInn['bowlingTeam']} Won by an inning and {teamsScores[lastInn['bowlingTeam']-teamsScores[lastInn['battingTeam']} Runs"
+      return f"{lastInn['bowlingTeam']} Won by an inning and {teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']]} Runs"
     else:
       return "Match Drawn"
   else: return "Match Drawn"
