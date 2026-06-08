@@ -6,6 +6,7 @@ import json
 import os
 from urllib.parse import urlparse, parse_qs
 def getResult(data):
+  plural = lambda n, w: w + 's' if n != 1 else w
   t1 = data['innings'][0]['battingTeam']
   t2 = data['innings'][0]['bowlingTeam']
   teamsScores = {t1: sum(i['total'] for i in data['innings'] if t1 == i['battingTeam']), t2: sum(i['total'] for i in data['innings'] if t2 == i['battingTeam'])}
@@ -15,13 +16,13 @@ def getResult(data):
   lastInn = data['innings'][-1]
   if sum([i['balls'] for i in data['innings']]) == totalBalls: return "Match Drawn"
   if lastInn['inningNo'] == 4:
-    if teamsScores[lastInn['battingTeam']] > teamsScores[lastInn['bowlingTeam']]: return f"{lastInn['battingTeam']} WON BY {maxWickets - lastInn['wickets']} Runs"
+    if teamsScores[lastInn['battingTeam']] > teamsScores[lastInn['bowlingTeam']]: return f"{lastInn['battingTeam']} WON BY {maxWickets - lastInn['wickets']} {plural(maxWickets - lastInn['wickets'], 'wicket')}"
     if lastInn['wickets'] == maxWickets:
       if teamsScores[lastInn['battingTeam']] == teamsScores[lastInn['bowlingTeam']]: return "Match Tied"
-      elif teamsScores[lastInn['battingTeam']] < teamsScores[lastInn['bowlingTeam']]: return f"{lastInn['bowlingTeam']} Won by {teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']]} Runs"
+      elif teamsScores[lastInn['battingTeam']] < teamsScores[lastInn['bowlingTeam']]: return f"{lastInn['bowlingTeam']} Won by {teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']]} {plural(teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']], 'Run')}"
   elif lastInn['inningNo'] == 3:
     if lastInn['wickets'] == maxWickets:
-      return f"{lastInn['bowlingTeam']} Won by an inning and {teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']]} Runs"
+      return f"{lastInn['bowlingTeam']} Won by an inning and {teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']]} {plural(teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']], 'Run')}"
     else:
       return "Match Drawn"
   else: return "Match Drawn"
