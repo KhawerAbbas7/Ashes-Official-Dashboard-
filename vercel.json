@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/scorecard(.*)",
-      "destination": "/api/scorecard.py"
+      "destination": "/api/scorecard"
     },
     {
       "source": "/api/(.*)",
