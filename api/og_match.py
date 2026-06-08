@@ -34,7 +34,7 @@ class handler(BaseHTTPRequestHandler):
     except:
       data = {"teamAName": "Live", "teamBName": "Match", "guildName": "Loading...", "channelName": "", "winner": "", "mvp": {"name": ""}}
     og_image_url = f"https://{host}/api/scorecard?match_id={match_id}"
-    html_content = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta property="og:title" content="Ashes | {data['teamAName']} Vs {data['teamBName']}" /><meta property="og:type" content="website" /><meta property="og:description" content="Guild: {data['guildName']}\nChannel: {data['channelName']}\nWon: {data['winner']}\nMVP: {data['mvp']['name']}\nTime: {to_pkt(data['timestamp'])}" /><meta name="theme-color" content="#ca3e47" /><meta property="og:image" content="{og_image_url}" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:image" content="{og_image_url}" /><meta property="og:url" content="https://{host}/match/{match_id}" /></head><body></body></html>"""
+    html_content = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta property="og:title" content="Ashes | {data['teamAName']} Vs {data['teamBName']}" /><meta property="og:type" content="website" /><meta property="og:description" content="Guild: {data['guildName']}\nChannel: {data['channelName']}\nWon: {data['winner']}\nMVP: {data['mvp']['name']}\nTime: {to_pkt(data['timestamp'])} PKT" /><meta name="theme-color" content="#ca3e47" /><meta property="og:image" content="{og_image_url}" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:image" content="{og_image_url}" /><meta property="og:url" content="https://{host}/match/{match_id}" /></head><body></body></html>"""
     self.send_response(200)
     self.send_header("Content-Type", "text/html")
     self.end_headers()
