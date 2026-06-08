@@ -5,6 +5,13 @@ import urllib.request
 import json
 import os
 from urllib.parse import urlparse, parse_qs
+import hmac, time
+import hashlib
+SECRET =b"NU%&iTrmScUJ2*nxlrhSf9a@3qq!*hOi%rU*cLzeXp#htSogcG9lGAVZCN3*!5DkVNX!dap4xcR$jZKtaI%0nT!ijbCDLC*InGh!a$!d9p4Dwx*GGVL*jYjO7eHFxhlg"
+def valid_sig(match_id, ts, sig):
+  msg = f"{match_id}:{ts}".encode()
+  expected = hmac.new(SECRET, msg, hashlib.sha256).hexdigest()
+  return hmac.compare_digest(expected, sig)
 def getResult(data):
   plural = lambda n, w: w + 's' if n != 1 else w
   t1 = data['innings'][0]['battingTeam']
@@ -89,6 +96,20 @@ class handler(BaseHTTPRequestHandler):
   def do_GET(self):
     query_components = parse_qs(urlparse(self.path).query)
     match_id = query_components.get("match_id", [None])[0]
+    ts = query.get("ts", [None])[0]
+    sig = query.get("sig", [None])[0]
+    if not ts or not sig:
+      self.send_response(400)
+      self.end_headers()
+      return
+    if abs(int(time.time()) - int(ts)) > 300:
+      self.send_response(403)
+      self.end_headers()
+      return
+    if not valid_sig(match_id, ts, sig):
+      self.send_response(403)
+      self.end_headers()
+      return
     if not match_id:
       self.send_response(400)
       self.end_headers()
