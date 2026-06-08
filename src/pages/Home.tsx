@@ -3,42 +3,42 @@ import { useEffect, useState } from "react"
 
 const TEAM_MEMBERS = [
   {
-    userId: 759713678013890560,
+    userId: "759713678013890560",
     name: "Lead Developer",
     username: "@92.97",
     role: "Creator & Lead Developer",
     avatarUrl: "https://cdn.discordapp.com/avatars/759713678013890560/2a996d48677d0c921786f3250859697c.png?size=1024"
   },
   {
-    userId: 882228764237508628,
+    userId: "882228764237508628",
     name: "Zuhair Asif",
     username: "@zuhair_asif",
     role: "Moderator",
     avatarUrl: "https://cdn.discordapp.com/avatars/882228764237508628/47ff74cdc7fd0e5c0075672057fae9ae.webp?size=4096"
   },
   {
-    userId: 1244979225924993094,
+    userId: "1244979225924993094",
     name: "Dani",
     username: "@no._.one15",
     role: "Moderator and STUMPEX Developer",
     avatarUrl: "https://cdn.discordapp.com/avatars/1244979225924993094/2fcc2cddd62c0cb3f4f7031e5c950de3.webp?size=1024"
   },
   {
-    userId: 707195158864855112,
+    userId: "707195158864855112",
     name: "SLAYER",
     username: "@slay3r699",
     role: "Moderator",
     avatarUrl: "https://cdn.discordapp.com/avatars/707195158864855112/b976343b71ede81998b9dada19403ded.webp?size=4096"
   },
   {
-    userId: 700032580744904754,
+    userId: "700032580744904754",
     name: "Hamza",
     username: "@hamzaaalalala",
     role: "Moderator",
     avatarUrl: "https://cdn.discordapp.com/avatars/700032580744904754/f041b68c32fe2d06069cebe28b2e6e0d.webp?size=4096"
   },
   {
-    userId: 915415308565622874,
+    userId: "915415308565622874",
     name: "Aatiq",
     username: "@.aatiq_",
     role: "Moderator",
@@ -60,7 +60,7 @@ export const hydrateTeamMembers = () => {
     .then(data => {
       console.log(data)
       return TEAM_MEMBERS.map(member => {
-        const apiUser = data[String(member.userId)]
+        const apiUser = data[member.userId]
         if (!apiUser) return member
         return {
           ...member,
