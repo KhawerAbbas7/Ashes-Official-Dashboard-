@@ -14,6 +14,8 @@ def getResult(data):
   folllowedOn = any(i['isFollowOn'] for i in data['innings'])
   totalBalls = data['matchMaximumBalls']
   lastInn = data['innings'][-1]
+  if data['drawByAgreement']:
+    return "Drawn by Agreement"
   if sum([i['balls'] for i in data['innings']]) == totalBalls: return "Match Drawn"
   if lastInn['inningNo'] == 4:
     if teamsScores[lastInn['battingTeam']] > teamsScores[lastInn['bowlingTeam']]: return f"{lastInn['battingTeam']} WON BY {maxWickets - lastInn['wickets']} {plural(maxWickets - lastInn['wickets'], 'wicket')}"
@@ -45,7 +47,7 @@ def makeMatchSummary(data):
   y = 260
   offset = 215.7
   for i, inn in enumerate(data.get("innings", [])):
-    battingTeam = f"{inn['battingTeam'].upper()} {inn['total']}/{inn['wickets']}"
+    battingTeam = f"{inn['battingTeam'].upper()} {inn['total']}/{inn['wickets']}{'(D)' if inn['isDeclared'] else ''}{'(F/O)' if inn['isFollowOn'] else ''}"
     color = "#14f67c" if i % 2 == 0 else "#05a9e6"
     draw.text((100, y), battingTeam, font=font, fill=color)
     ino = inn.get("inningNo", i+1)
