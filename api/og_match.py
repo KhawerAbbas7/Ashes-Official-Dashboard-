@@ -40,7 +40,7 @@ class handler(BaseHTTPRequestHandler):
     except:
       data = {"teamAName": "Live", "teamBName": "Match", "guildName": "Loading...", "channelName": "", "winner": "", "mvp": {"name": ""}}
     tims = time.time()
-    s = make_sig(match_id, ts)
+    s = make_sig(match_id, tims)
     og_image_url = f"https://{host}/api/scorecard?match_id={match_id}&hmac={s}&ts={tims}"
     html_content = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta property="og:title" content="Ashes | {data['teamAName']} Vs {data['teamBName']}" /><meta property="og:type" content="website" /><meta property="og:description" content="Guild: {data['guildName']}\nChannel: {data['channelName']}\nWon: {data['winner']}\nMVP: {data['mvp']['name']}\nTime: {to_pkt(data['timestamp'])} PKT" /><meta name="theme-color" content="#ca3e47" /><meta property="og:image" content="{og_image_url}" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:image" content="{og_image_url}" /><meta property="og:url" content="https://{host}/match/{match_id}" /></head><body></body></html>"""
     self.send_response(200)
