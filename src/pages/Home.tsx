@@ -58,6 +58,7 @@ export const hydrateTeamMembers = () => {
       return res.json()
     })
     .then(data => {
+      console.log(data)
       return TEAM_MEMBERS.map(member => {
         const apiUser = data[String(member.userId)]
         if (!apiUser) return member
