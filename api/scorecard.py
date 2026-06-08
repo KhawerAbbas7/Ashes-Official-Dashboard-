@@ -95,6 +95,12 @@ def makeMatchSummary(data):
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
     query_components = parse_qs(urlparse(self.path).query)
+    user_agent = self.headers.get("User-Agent", "").lower()
+    host = self.headers.get("Host", "ashesdb.vercel.app")
+    bot_keywords = ["bot", "spider", "crawler", "facebookexternalhit", "twitterbot", "whatsapp", "telegram", "discordbot"]
+    if not any(k in user_agent for k in bot_keywords):
+      self.send_response(403)
+      self.end_headers()
     match_id = query_components.get("match_id", [None])[0]
     ts = query_components.get("ts", [None])[0]
     sig = query_components.get("hmac", [None])[0]
