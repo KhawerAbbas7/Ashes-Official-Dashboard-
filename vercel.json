@@ -6,14 +6,9 @@
   },
   "rewrites": [
     {
-      "source": "/api/scorecard(.*)",
-      "destination": "/api/scorecard.py"
+      "source": "/api/(?!scorecard)(.*)",
+      "destination": "/api/proxy.py"
     },
-    {
-  "source": "/api/(?!scorecard)(.*)",
-  "destination": "/api/proxy.py"
-  },
-
     {
       "source": "/match/(.*)",
       "destination": "/api/og_match"
