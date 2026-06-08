@@ -8,7 +8,7 @@ import hmac
 import hashlib
 SECRET = b"NU%&iTrmScUJ2*nxlrhSf9a@3qq!*hOi%rU*cLzeXp#htSogcG9lGAVZCN3*!5DkVNX!dap4xcR$jZKtaI%0nT!ijbCDLC*InGh!a$!d9p4Dwx*GGVL*jYjO7eHFxhlg"
 def make_sig(match_id, ts):
-  msg = f"{match_id}:{int(ts)}".encode()
+  msg = f"{match_id}:{int(float(ts))}".encode()
   return hmac.new(SECRET, msg, hashlib.sha256).hexdigest()
 def to_pkt(timestamp):
   dt = datetime.fromtimestamp(int(timestamp), ZoneInfo("Asia/Karachi"))
