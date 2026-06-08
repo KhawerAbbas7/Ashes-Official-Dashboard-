@@ -5,7 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 def to_pkt(timestamp):
-  dt = datetime.fromtimestamp(timestamp, ZoneInfo("Asia/Karachi"))
+  dt = datetime.fromtimestamp(int(timestamp), ZoneInfo("Asia/Karachi"))
   return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 class handler(BaseHTTPRequestHandler):
