@@ -96,8 +96,8 @@ class handler(BaseHTTPRequestHandler):
   def do_GET(self):
     query_components = parse_qs(urlparse(self.path).query)
     match_id = query_components.get("match_id", [None])[0]
-    ts = query.get("ts", [None])[0]
-    sig = query.get("sig", [None])[0]
+    ts = query_components.get("ts", [None])[0]
+    sig = query_components.get("sig", [None])[0]
     if not ts or not sig:
       self.send_response(400)
       self.end_headers()
