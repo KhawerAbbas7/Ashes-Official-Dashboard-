@@ -6,7 +6,11 @@
   },
   "rewrites": [
     {
-      "source": "/api/(?!scorecard)(.*)",
+      "source": "/api/scorecard",
+      "destination": "/api/scorecard.py"
+    },
+    {
+      "source": "/api/(.*)",
       "destination": "/api/proxy.py"
     },
     {
