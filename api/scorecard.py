@@ -5,6 +5,26 @@ import urllib.request
 import json
 import os
 from urllib.parse import urlparse, parse_qs
+def getResult(data):
+  t1 = data['innings'][0]['battingTeam']
+  t2 = data['innings'][0]['bowlingTeam']
+  teamsScores = {t1: sum(i['total'] for i in data['innings'] if t1 == i['battingTeam']), t2: sum(i['total'] for i in data['innings'] if t2 == i['battingTeam'])}
+  maxWickets = max([i['wickets'] for i in data['innings']])
+  folllowedOn = any(i['isFollowOn'] for i in data['innings'])
+  totalBalls = data['matchMaximumBalls']
+  lastInn = data['innings'][-1]
+  if sum([i['balls'] for i in data['innings']]) == totalBalls: return "Match Drawn"
+  if lastInn['inningNo'] == 4:
+    if teamsScores[lastInn['battingTeam']] > teamsScores[lastInn['bowlingTeam']]: return f"{lastInn['battingTeam']} WON BY {maxWickets - lastInn['wickets']} Runs"
+    if lastInn['wickets'] == maxWickets:
+      if teamsScores[lastInn['battingTeam']] == teamsScores[lastInn['bowlingTeam']]: return "Match Tied"
+      elif teamsScores[lastInn['battingTeam']] < teamsScores[lastInn['bowlingTeam']]: return f"{lastInn['bowlingTeam']} Won by {teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']]} Runs"
+  elif lastInn['inningNo'] == 3 and folllowedOn:
+    if lastInn['wickets'] == maxWickets:
+      return f"{lastInn['bowlingTeam']} Won by an inning and {teamsScores[lastInn['bowlingTeam']-teamsScores[lastInn['battingTeam']} Runs"
+    else:
+      return "Match Drawn"
+  else: return "Match Drawn"
 def makeMatchSummary(data):
   S = 1.3325714286
   BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -55,7 +75,7 @@ def makeMatchSummary(data):
     if i > 0: offset = 230
     if i == 2: offset = 240
     y += offset
-  status = data.get("winner", "")
+  status = getResult(data)
   footer = f"{status}".upper() if status else "MATCH DRAWN"
   draw.text(((1280 - font7.getlength(footer)) / 2, 1190), footer, font=font7, fill="black")
   image_binary = BytesIO()
