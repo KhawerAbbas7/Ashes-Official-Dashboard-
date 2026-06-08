@@ -19,7 +19,7 @@ def getResult(data):
     if lastInn['wickets'] == maxWickets:
       if teamsScores[lastInn['battingTeam']] == teamsScores[lastInn['bowlingTeam']]: return "Match Tied"
       elif teamsScores[lastInn['battingTeam']] < teamsScores[lastInn['bowlingTeam']]: return f"{lastInn['bowlingTeam']} Won by {teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']]} Runs"
-  elif lastInn['inningNo'] == 3 and folllowedOn:
+  elif lastInn['inningNo'] == 3:
     if lastInn['wickets'] == maxWickets:
       return f"{lastInn['bowlingTeam']} Won by an inning and {teamsScores[lastInn['bowlingTeam']]-teamsScores[lastInn['battingTeam']]} Runs"
     else:
