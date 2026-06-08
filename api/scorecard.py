@@ -9,7 +9,7 @@ import hmac, time
 import hashlib
 SECRET =b"NU%&iTrmScUJ2*nxlrhSf9a@3qq!*hOi%rU*cLzeXp#htSogcG9lGAVZCN3*!5DkVNX!dap4xcR$jZKtaI%0nT!ijbCDLC*InGh!a$!d9p4Dwx*GGVL*jYjO7eHFxhlg"
 def valid_sig(match_id, ts, sig):
-  msg = f"{match_id}:{ts}".encode()
+  msg = f"{match_id}:{int(ts)}".encode()
   expected = hmac.new(SECRET, msg, hashlib.sha256).hexdigest()
   return hmac.compare_digest(expected, sig)
 def getResult(data):
@@ -97,7 +97,7 @@ class handler(BaseHTTPRequestHandler):
     query_components = parse_qs(urlparse(self.path).query)
     match_id = query_components.get("match_id", [None])[0]
     ts = query_components.get("ts", [None])[0]
-    sig = query_components.get("sig", [None])[0]
+    sig = query_components.get("hmac", [None])[0]
     if not ts or not sig:
       self.send_response(400)
       self.end_headers()
