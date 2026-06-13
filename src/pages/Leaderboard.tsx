@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import { fetchLeaderboard } from "../api";
 
 const CATEGORIES: Record<string, string> = {
@@ -34,6 +34,18 @@ export function Leaderboard() {
   const [selectedCategory, setSelectedCategory] = useState("Most Runs");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -55,19 +67,35 @@ export function Leaderboard() {
         <meta name="description" content="View global cricket leaderboards across all Discord servers." />
       </Helmet>
       
-      <div className="mb-6 w-full max-w-xs relative">
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="appearance-none bg-ashes-card border border-ashes-border text-white font-sans text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red w-full"
+      <div className="mb-6 w-full max-w-xs relative" ref={dropdownRef}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex w-full items-center justify-between bg-ashes-card border border-ashes-border text-white font-sans text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red hover:border-ashes-red transition-colors cursor-pointer"
         >
-          {Object.keys(CATEGORIES).map((cat) => (
-             <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-ashes-very-muted">
-          ▼
-        </div>
+          <span>{selectedCategory}</span>
+          <ChevronDown className={`w-4 h-4 text-ashes-very-muted transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        </button>
+
+        {isOpen && (
+          <div className="absolute z-10 w-full mt-1 bg-ashes-card border border-ashes-border rounded-sm shadow-xl max-h-72 overflow-y-auto">
+            {Object.keys(CATEGORIES).map((cat) => (
+              <div
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                  setIsOpen(false);
+                }}
+                className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+                  selectedCategory === cat
+                    ? "bg-ashes-card-light text-white font-medium"
+                    : "text-ashes-muted hover:bg-ashes-card-light hover:text-white"
+                }`}
+              >
+                {cat}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {loading && <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Loading...</div>}
