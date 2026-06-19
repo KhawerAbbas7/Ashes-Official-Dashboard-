@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { fetchPlayerStats } from "../api";
 import { Trophy } from "lucide-react";
@@ -7,11 +7,12 @@ export function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [recentCount, setRecentCount] = useState(5);
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetchPlayerStats(id).then(setData).catch(console.error).finally(() => setLoading(false));
-  }, [id]);
+    fetchPlayerStats(id, recentCount).then(setData).catch(console.error).finally(() => setLoading(false));
+  }, [id, recentCount]);
   if (loading) return <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Loading Profile...</div>;
   if (!data || !data.player) return <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Player Not Found</div>;
   const { player, batting, bowling, general, recentPerformances } = data;
@@ -135,22 +136,29 @@ export function PlayerProfile() {
         </div>
         {recentPerformances && recentPerformances.length > 0 && (
           <div className="mt-10">
-            <h2 className="font-bebas text-3xl text-white tracking-wide mb-4">Recent Performances</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bebas text-3xl text-white tracking-wide">Recent Performances</h2>
+              <select value={recentCount} onChange={(e) => setRecentCount(Number(e.target.value))} className="bg-ashes-card border border-ashes-border text-white text-sm font-mono uppercase tracking-widest rounded-sm px-3 py-1.5 outline-none focus:border-ashes-red cursor-pointer">
+                {[5, 10, 15, 20].map(num => (
+                  <option key={num} value={num}>Last {num}</option>
+                ))}
+              </select>
+            </div>
             <div className="flex flex-wrap gap-4">
               {recentPerformances.map((perf: any, i: number) => (
-                <div key={i} className="bg-ashes-card border border-ashes-border p-4 pt-8 rounded-sm min-w-[200px] flex flex-col gap-2 shadow-xl relative">
-                  <div className="text-[10px] font-mono text-ashes-very-muted absolute top-2 right-3">
+                <Link to={`/matches/${perf.matchId}`} key={i} className="bg-ashes-card border border-ashes-border p-4 pt-8 rounded-sm min-w-[200px] flex flex-col gap-2 shadow-xl relative group hover:border-ashes-red transition-colors block">
+                  <div className="text-[10px] font-mono text-ashes-very-muted absolute top-2 right-3 group-hover:text-white transition-colors">
                     {new Date(perf.timestamp * 1000).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </div>
                   <div className="flex items-start gap-2 text-white font-mono text-sm">
                     <span className="opacity-50">🏏</span>
                     <span className="font-medium tracking-wide">{perf.bat}</span>
                   </div>
-                  <div className="flex items-start gap-2 text-ashes-muted font-mono text-sm">
+                  <div className="flex items-start gap-2 text-ashes-muted font-mono text-sm group-hover:text-zinc-300 transition-colors">
                     <span className="opacity-50">🥎</span>
                     <span className="font-medium tracking-wide">{perf.bowl}</span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
