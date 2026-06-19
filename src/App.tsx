@@ -6,6 +6,9 @@ import { LiveMatch } from "./pages/LiveMatch";
 import { Matches } from "./pages/Matches";
 import { MatchScorecard } from "./pages/MatchScorecard";
 import { Rankings } from "./pages/Rankings";
+import { Players } from "./pages/Players";
+import { PlayerProfile } from "./pages/PlayerProfile";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -17,6 +20,8 @@ export default function App() {
           <Route path="live/:id" element={<LiveMatch />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="rankings" element={<Rankings />} />
+          <Route path="players" element={<Players />} />
+          <Route path="player/:id" element={<PlayerProfile />} />
         </Route>
       </Routes>
     </BrowserRouter>

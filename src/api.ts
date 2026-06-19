@@ -1,4 +1,15 @@
 const BASE = "/api";
+export const searchPlayers = async (query: string) => {
+  const res = await fetch(`${BASE}/players/search?q=${query}`);
+  if (!res.ok) throw new Error("Failed to search players");
+  return res.json();
+};
+
+export const fetchPlayerStats = async (playerId: string) => {
+  const res = await fetch(`${BASE}/players/${playerId}/stats`);
+  if (!res.ok) throw new Error("Failed to fetch player stats");
+  return res.json();
+};
 export const fetchRankings = async (type: string, page: number = 1, limit: number = 50) => {
   const res = await fetch(`${BASE}/rankings/${type}?page=${page}&limit=${limit}`);
   if (!res.ok) throw new Error("Failed to fetch rankings");

@@ -17,6 +17,7 @@ export function Layout() {
             <Link to="/" className={getNavClass("/", true)}>Home</Link>
             <Link to="/matches" className={getNavClass("/match")}>Matches</Link>
             <Link to="/leaderboard" className={getNavClass("/leaderboard")}>Leaderboard</Link>
+            <Link to="/players" className={getNavClass("/players")}>Players</Link>
             <Link to="/rankings" className={getNavClass("/rankings")}>Rankings</Link>
           </nav>
         </header>
