@@ -5,7 +5,7 @@ import { Leaderboard } from "./pages/Leaderboard";
 import { LiveMatch } from "./pages/LiveMatch";
 import { Matches } from "./pages/Matches";
 import { MatchScorecard } from "./pages/MatchScorecard";
-
+import { Rankings } from "./pages/Rankings";
 export default function App() {
   return (
     <BrowserRouter>
@@ -16,6 +16,7 @@ export default function App() {
           <Route path="match/:id" element={<MatchScorecard />} />
           <Route path="live/:id" element={<LiveMatch />} />
           <Route path="leaderboard" element={<Leaderboard />} />
+          <Route path="rankings" element={<Rankings />} />
         </Route>
       </Routes>
     </BrowserRouter>

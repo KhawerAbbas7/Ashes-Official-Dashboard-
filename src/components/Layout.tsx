@@ -1,14 +1,10 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-
 export function Layout() {
   const location = useLocation();
   const getNavClass = (path: string, exact: boolean = false) => {
     const isActive = exact ? location.pathname === path : location.pathname.startsWith(path);
-    return isActive 
-      ? "text-white border-b border-ashes-red pb-1"
-      : "hover:text-white transition-colors";
+    return isActive ? "text-white border-b border-ashes-red pb-1" : "hover:text-white transition-colors";
   };
-
   return (
     <div className="min-h-screen bg-ashes-dark flex justify-center pb-12 selection:bg-ashes-red/30">
       <div className="w-full max-w-[1080px] flex flex-col mt-4">
@@ -21,6 +17,7 @@ export function Layout() {
             <Link to="/" className={getNavClass("/", true)}>Home</Link>
             <Link to="/matches" className={getNavClass("/match")}>Matches</Link>
             <Link to="/leaderboard" className={getNavClass("/leaderboard")}>Leaderboard</Link>
+            <Link to="/rankings" className={getNavClass("/rankings")}>Rankings</Link>
           </nav>
         </header>
         <div className="flex-1 px-4 md:px-12">

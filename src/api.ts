@@ -1,5 +1,9 @@
 const BASE = "/api";
-
+export const fetchRankings = async (type: string, page: number = 1, limit: number = 50) => {
+  const res = await fetch(`${BASE}/rankings/${type}?page=${page}&limit=${limit}`);
+  if (!res.ok) throw new Error("Failed to fetch rankings");
+  return res.json();
+};
 export const fetchMatches = async (query?: string, channelId?: string, guildId?: string, playerId?: string) => {
   const url = new URL(`${BASE}/matches/getrecent`, window.location.origin);
   url.searchParams.append("recent", "20");
