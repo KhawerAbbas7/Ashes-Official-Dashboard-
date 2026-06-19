@@ -68,7 +68,7 @@ export function PlayerProfile() {
                   <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">30s</th>
                   <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">4s</th>
                   <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">6s</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">0s</th>
+                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Ducks</th>
                 </tr>
               </thead>
               <tbody>
