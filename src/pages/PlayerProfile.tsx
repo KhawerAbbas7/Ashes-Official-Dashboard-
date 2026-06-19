@@ -3,29 +3,23 @@ import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { fetchPlayerStats } from "../api";
 import { Trophy } from "lucide-react";
-
 export function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     fetchPlayerStats(id).then(setData).catch(console.error).finally(() => setLoading(false));
   }, [id]);
-
   if (loading) return <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Loading Profile...</div>;
   if (!data || !data.player) return <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Player Not Found</div>;
-
-  const { player, batting, bowling, general } = data;
-
+  const { player, batting, bowling, general, recentPerformances } = data;
   return (
     <>
       <Helmet>
         <title>{player.name} Profile & Stats · Ashes</title>
       </Helmet>
-      
       <div className="mt-4 mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-ashes-card border border-ashes-border p-6 md:p-8 rounded-sm">
         <div className="flex items-center gap-6">
           <img src={player.avatar} alt={player.name} className="w-24 h-24 md:w-32 md:h-32 rounded-full border border-ashes-border" />
@@ -34,7 +28,6 @@ export function PlayerProfile() {
             <p className="text-ashes-very-muted font-mono text-xs uppercase tracking-[0.2em]">ID: {player.id}</p>
           </div>
         </div>
-        
         {general.mvps > 0 && (
           <div className="flex items-center gap-3 bg-ashes-dark border border-[#E9C46A]/20 text-[#E9C46A] px-5 py-3 rounded-sm self-stretch md:self-auto">
             <Trophy className="w-6 h-6" />
@@ -45,7 +38,6 @@ export function PlayerProfile() {
           </div>
         )}
       </div>
-
       <div className="space-y-10">
         <div>
           <h2 className="font-bebas text-3xl text-white tracking-wide mb-4">Batting & Fielding</h2>
@@ -94,7 +86,6 @@ export function PlayerProfile() {
             </table>
           </div>
         </div>
-
         <div>
           <h2 className="font-bebas text-3xl text-white tracking-wide mb-4">Bowling</h2>
           <div className="overflow-x-auto shadow-2xl rounded-sm border border-ashes-border">
@@ -142,6 +133,28 @@ export function PlayerProfile() {
             </table>
           </div>
         </div>
+        {recentPerformances && recentPerformances.length > 0 && (
+          <div className="mt-10">
+            <h2 className="font-bebas text-3xl text-white tracking-wide mb-4">Recent Performances</h2>
+            <div className="flex flex-wrap gap-4">
+              {recentPerformances.map((perf: any, i: number) => (
+                <div key={i} className="bg-ashes-card border border-ashes-border p-4 pt-8 rounded-sm min-w-[200px] flex flex-col gap-2 shadow-xl relative">
+                  <div className="text-[10px] font-mono text-ashes-very-muted absolute top-2 right-3">
+                    {new Date(perf.timestamp * 1000).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  </div>
+                  <div className="flex items-start gap-2 text-white font-mono text-sm">
+                    <span className="opacity-50">🏏</span>
+                    <span className="font-medium tracking-wide">{perf.bat}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-ashes-muted font-mono text-sm">
+                    <span className="opacity-50">🥎</span>
+                    <span className="font-medium tracking-wide">{perf.bowl}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
