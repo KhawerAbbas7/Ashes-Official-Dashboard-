@@ -93,6 +93,7 @@ export function PlayerProfile() {
                   <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">4s</th>
                   <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">6s</th>
                   <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Ducks</th>
+                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">AFK %</th>
                 </tr>
               </thead>
               <tbody>
@@ -113,6 +114,7 @@ export function PlayerProfile() {
                   <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.fours}</td>
                   <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.sixes}</td>
                   <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.ducks}</td>
+                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.afkPct}%</td>
                 </tr>
               </tbody>
             </table>
@@ -141,6 +143,7 @@ export function PlayerProfile() {
                   <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Hattricks</th>
                   <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">4s</th>
                   <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">6s</th>
+                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">AFK %</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +164,7 @@ export function PlayerProfile() {
                   <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.hattricks}</td>
                   <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.foursConceded}</td>
                   <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.sixesConceded}</td>
+                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.afkPct}%</td>
                 </tr>
               </tbody>
             </table>
