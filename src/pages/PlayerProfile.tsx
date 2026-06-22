@@ -19,7 +19,7 @@ export function PlayerProfile() {
   if (loading && !data) return <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Loading Profile...</div>;
   if (!data || !data.player) return <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Player Not Found</div>;
 
-  const { player, batting, bowling, general, recentPerformances } = data;
+  const { player, batting, bowling, general, recentPerformances, rankings } = data;
 
   return (
     <>
@@ -46,7 +46,40 @@ export function PlayerProfile() {
           </div>
         )}
       </div>
+<div className="flex flex-wrap items-center gap-3 self-stretch md:self-auto">
+          {rankings?.batting?.rank && (
+            <div className="flex flex-col items-center justify-center bg-ashes-dark border border-ashes-border px-4 py-2 rounded-sm min-w-[80px]">
+              <div className="font-bebas text-2xl text-white leading-none">#{rankings.batting.rank}</div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ashes-muted mt-1">Batting</div>
+            </div>
+          )}
+          
+          {rankings?.bowling?.rank && (
+            <div className="flex flex-col items-center justify-center bg-ashes-dark border border-ashes-border px-4 py-2 rounded-sm min-w-[80px]">
+              <div className="font-bebas text-2xl text-white leading-none">#{rankings.bowling.rank}</div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ashes-muted mt-1">Bowling</div>
+            </div>
+          )}
 
+          {rankings?.allrounder?.rank && (
+            <div className="flex flex-col items-center justify-center bg-ashes-dark border border-[#E9C46A]/20 px-4 py-2 rounded-sm min-w-[80px]">
+              <div className="font-bebas text-2xl text-[#E9C46A] leading-none">#{rankings.allrounder.rank}</div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#E9C46A]/80 mt-1">All-Rounder</div>
+            </div>
+          )}
+
+          {general.mvps > 0 && (
+            <div className="flex items-center gap-3 bg-ashes-dark border border-[#E9C46A]/20 text-[#E9C46A] px-5 py-3 rounded-sm">
+              <Trophy className="w-6 h-6" />
+              <div>
+                <div className="font-bebas text-2xl leading-none">{general.mvps}</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-80">MVP Awards</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
       <div className="space-y-10">
         <div>
           <h2 className="font-bebas text-3xl text-white tracking-wide mb-4">Batting & Fielding</h2>
