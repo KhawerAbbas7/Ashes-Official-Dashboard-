@@ -13,7 +13,7 @@ const TEAM_MEMBERS = [
     userId: "882228764237508628",
     name: "Zuhair Asif",
     username: "@zuhair_asif",
-    role: "Moderator",
+    role: "Graphic Designer & Moderator",
     avatarUrl: "https://cdn.discordapp.com/avatars/882228764237508628/47ff74cdc7fd0e5c0075672057fae9ae.webp?size=4096"
   },
   {
@@ -41,6 +41,13 @@ const TEAM_MEMBERS = [
     userId: "915415308565622874",
     name: "Aatiq",
     username: "@.aatiq_",
+    role: "Moderator",
+    avatarUrl: "https://cdn.discordapp.com/avatars/915415308565622874/d86dafcf4c208eeedef02ab67ae70c26.webp?size=4096"
+  }
+  {
+    userId: "943542551066079312",
+    name: "Aaryan",
+    username: "@aaryan_ali",
     role: "Moderator",
     avatarUrl: "https://cdn.discordapp.com/avatars/915415308565622874/d86dafcf4c208eeedef02ab67ae70c26.webp?size=4096"
   }
