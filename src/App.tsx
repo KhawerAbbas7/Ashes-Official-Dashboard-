@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { Layout } from "./components/Layout";
 import { Home } from "./pages/Home";
 import { Leaderboard } from "./pages/Leaderboard";
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="player/:id" element={<PlayerProfile />} />
         </Route>
       </Routes>
+      <Analytics />
     </BrowserRouter>
   );
 }
