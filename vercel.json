@@ -1,0 +1,25 @@
+{
+  "functions": {
+    "api/**/*.py": {
+      "includeFiles": "{templates,fonts}/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/scorecard",
+      "destination": "/api/scorecard.py"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/proxy.py"
+    },
+    {
+      "source": "/match/(.*)",
+      "destination": "/api/og_match"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
