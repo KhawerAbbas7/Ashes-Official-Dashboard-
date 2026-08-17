@@ -43,6 +43,13 @@ const TEAM_MEMBERS = [
     username: "@.aatiq_",
     role: "Moderator",
     avatarUrl: "https://cdn.discordapp.com/avatars/915415308565622874/d86dafcf4c208eeedef02ab67ae70c26.webp?size=4096"
+  },
+  {
+    userId: "1269703650494644387",
+    name: "Bondu Khan",
+    username: "@kondubhan",
+    role: "Moderator",
+    avatarUrl: "https://cdn.discordapp.com/avatars/915415308565622874/d86dafcf4c208eeedef02ab67ae70c26.webp?size=4096"
   }
 ]
 
