@@ -17,6 +17,7 @@ def to_pkt(timestamp):
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
     match_id = self.path.split("/")[-1].split("?")[0]
+    target_base = os.environ["APIbase"]
     user_agent = self.headers.get("User-Agent", "").lower()
     host = self.headers.get("Host", "ashesdb.vercel.app")
     bot_keywords = ["bot", "spider", "crawler", "facebookexternalhit", "twitterbot", "whatsapp", "telegram", "discordbot"]
@@ -32,7 +33,7 @@ class handler(BaseHTTPRequestHandler):
       self.end_headers()
       self.wfile.write(spa_html)
       return
-    api_url = f"http://129.80.180.202:8000/matches/{match_id}"
+    api_url = f"{target_base}/matches/{match_id}"
     try:
       req = urllib.request.Request(api_url)
       with urllib.request.urlopen(req, timeout=8) as res:
