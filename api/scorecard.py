@@ -35,10 +35,22 @@ def getResult(data):
     else:
       return "Match Drawn"
   else: return "Match Drawn"
+def getT15Result(data):
+  plural = lambda n, w: w + 's' if n != 1 else w
+  first, last = data['innings'][0], data['innings'][-1]
+  if len(data['innings']) < 2: return "Match Drawn"
+  if last['total'] > first['total']:
+    left = max(i['wickets'] for i in data['innings']) - last['wickets']
+    return f"{last['battingTeam']} WON BY {left} {plural(left, 'wicket')}"
+  if last['total'] == first['total']: return "Match Tied"
+  diff = first['total'] - last['total']
+  return f"{last['bowlingTeam']} Won by {diff} {plural(diff, 'Run')}"
 def makeMatchSummary(data):
   S = 1.3325714286
   BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-  img = Image.open(os.path.join(BASE_DIR, "templates", "matchSummary.png")).convert("RGBA")
+  is_t15 = str(data.get('format', 'test')).lower() == 't15'
+  limit = 4 if is_t15 else 2
+  img = Image.open(os.path.join(BASE_DIR, "templates", "t15matchSummary.png" if is_t15 else "matchSummary.png")).convert("RGBA")
   draw = ImageDraw.Draw(img)
   font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "archivo.woff2"), int(40*S))
   font2 = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "canvaSansRegular.woff2"), int(30*S))
@@ -52,7 +64,7 @@ def makeMatchSummary(data):
   t2 = data.get('teamBName', data['innings'][0]['bowlingTeam'] if data.get('innings') else 'TEAM B')
   draw.text((203.3, 139.4), f"{t1.upper()} VS {t2.upper()}", font=font2, fill='White')
   y = 260
-  offset = 215.7
+  offset = 470 if is_t15 else 215.7
   for i, inn in enumerate(data.get("innings", [])):
     battingTeam = f"{inn['battingTeam'].upper()} {inn['total']}/{inn['wickets']}{'(D)' if inn['isDeclared'] else ''}{'(F/O)' if inn['isFollowOn'] else ''}"
     color = "#14f67c" if i % 2 == 0 else "#05a9e6"
@@ -61,11 +73,11 @@ def makeMatchSummary(data):
     ord_s = "th" if 10 <= ino % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(ino % 10, "th")
     innLabel = f"{ino}{ord_s} Inning".upper()
     draw.text((1200 - font3.getlength(innLabel), y + 10), innLabel, font=font3, fill='White')
-    topBat = sorted(inn.get("batters", []), key=lambda x: x.get("runs", 0), reverse=True)[:2]
-    topBowl = sorted(inn.get("bowlers", []), key=lambda x: x.get("wickets", 0), reverse=True)[:2]
+    topBat = sorted(inn.get("batters", []), key=lambda x: x.get("runs", 0), reverse=True)[:limit]
+    topBowl = sorted(inn.get("bowlers", []), key=lambda x: x.get("wickets", 0), reverse=True)[:limit]
     y2 = y
     offset2 = 50
-    for k in range(2):
+    for k in range(limit):
       if k < len(topBat):
         b = topBat[k]
         name = b.get("playerName", "")[:15].upper()
@@ -82,10 +94,11 @@ def makeMatchSummary(data):
         draw.text((750, y2 + 60), name, font=font4, fill='White')
         draw.text((1190 - font5.getlength(fig), y2 + 60), fig, font=font5, fill='White')
       y2 += offset2
-    if i > 0: offset = 230
-    if i == 2: offset = 240
+      if not is_t15:
+        if i > 0: offset = 230
+        if i == 2: offset = 240
     y += offset
-  status = getResult(data)
+  status = getT15Result(data) if is_t15 else getResult(data)
   footer = f"{status}".upper() if status else "MATCH DRAWN"
   draw.text(((1280 - font7.getlength(footer)) / 2, 1190), footer, font=font7, fill="black")
   image_binary = BytesIO()
