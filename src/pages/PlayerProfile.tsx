@@ -1,8 +1,45 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { fetchPlayerStats } from "../api";
-import { Trophy } from "lucide-react";
+
+const BAT_STATS = (batting: any) => [
+  ["Mat", batting.matches],
+  ["Inns", batting.innings],
+  ["NO", batting.notOuts],
+  ["Runs", batting.runs],
+  ["HS", batting.highestScore],
+  ["Ave", batting.average],
+  ["BF", batting.balls],
+  ["SR", batting.strikeRate],
+  ["200s", batting.twoHundreds],
+  ["100s", batting.hundreds],
+  ["50s", batting.fifties],
+  ["30s", batting.thirties],
+  ["4s", batting.fours],
+  ["6s", batting.sixes],
+  ["Ducks", batting.ducks],
+  ["AFK %", `${batting.afkPct}%`],
+];
+
+const BOWL_STATS = (bowling: any) => [
+  ["Mat", bowling.matches],
+  ["Inns", bowling.innings],
+  ["Balls", bowling.balls],
+  ["Runs", bowling.runs],
+  ["Wkts", bowling.wickets],
+  ["BBI", bowling.bbi],
+  ["Ave", bowling.average],
+  ["Econ", bowling.economy],
+  ["SR", bowling.strikeRate],
+  ["3w", bowling.threeWickets],
+  ["5w", bowling.fiveWickets],
+  ["10w", bowling.tenWickets],
+  ["Hattricks", bowling.hattricks],
+  ["4s", bowling.foursConceded],
+  ["6s", bowling.sixesConceded],
+  ["AFK %", `${bowling.afkPct}%`],
+];
 
 export function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
@@ -13,192 +50,182 @@ export function PlayerProfile() {
   useEffect(() => {
     if (!id) return;
     if (!data) setLoading(true);
-    fetchPlayerStats(id, recentCount).then(setData).catch(console.error).finally(() => setLoading(false));
+    fetchPlayerStats(id, recentCount)
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [id, recentCount]);
 
-  if (loading && !data) return <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Loading Profile...</div>;
-  if (!data || !data.player) return <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Player Not Found</div>;
+  if (loading && !data) {
+    return <p className="label py-16 text-center">Loading profile…</p>;
+  }
+
+  if (!data || !data.player) {
+    return <p className="label py-16 text-center text-ball">Player not found</p>;
+  }
 
   const { player, batting, bowling, general, recentPerformances, rankings } = data;
+  const batStats = BAT_STATS(batting);
+  const bowlStats = BOWL_STATS(bowling);
 
   return (
     <>
       <Helmet>
-        <title>{player.name} Profile & Stats · Ashes</title>
+        <title>{player.name} Profile &amp; Stats · Ashes</title>
       </Helmet>
-      
-      <div className="mt-4 mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-ashes-card border border-ashes-border p-6 md:p-8 rounded-sm">
-        <div className="flex items-center gap-6">
-          <img src={player.avatar} alt={player.name} className="w-24 h-24 md:w-32 md:h-32 rounded-full border border-ashes-border" />
-          <div>
-            <h1 className="font-bebas text-4xl md:text-5xl text-white tracking-wide mb-1">{player.name}</h1>
-            <p className="text-ashes-very-muted font-mono text-xs uppercase tracking-[0.2em]">ID: {player.id}</p>
-          </div>
-        </div>
-        
-                <div className="flex flex-wrap items-center justify-end gap-3 self-stretch md:self-auto">
-          {rankings?.batting?.rank && (
-            <div className="flex flex-col items-center justify-center bg-ashes-dark border border-ashes-border px-4 py-2 rounded-sm min-w-[80px]">
-              <div className="font-bebas text-2xl text-white leading-none">#{rankings.batting.rank}</div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ashes-muted mt-1">Batting</div>
-            </div>
-          )}
-          
-          {rankings?.bowling?.rank && (
-            <div className="flex flex-col items-center justify-center bg-ashes-dark border border-ashes-border px-4 py-2 rounded-sm min-w-[80px]">
-              <div className="font-bebas text-2xl text-white leading-none">#{rankings.bowling.rank}</div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ashes-muted mt-1">Bowling</div>
-            </div>
-          )}
 
-          {rankings?.allrounder?.rank && (
-            <div className="flex flex-col items-center justify-center bg-ashes-dark border border-[#E9C46A]/20 px-4 py-2 rounded-sm min-w-[80px]">
-              <div className="font-bebas text-2xl text-[#E9C46A] leading-none">#{rankings.allrounder.rank}</div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#E9C46A]/80 mt-1">All-Rounder</div>
-            </div>
-          )}
+      <div className="grid gap-6 border-b border-rule pb-8 md:grid-cols-[auto_minmax(0,1fr)] md:items-end">
+        <img
+          src={player.avatar}
+          alt=""
+          width={128}
+          height={128}
+          className="h-24 w-24 border border-rule object-cover md:h-32 md:w-32"
+        />
+        <div className="min-w-0">
+          <p className="label">Player dossier</p>
+          <h1 className="display mt-2 text-4xl leading-[0.95] sm:text-5xl md:text-6xl">{player.name}</h1>
+          <p className="label mt-2">ID {player.id}</p>
 
-          {general.mvps > 0 && (
-            <div className="flex items-center gap-3 bg-ashes-dark border border-[#E9C46A]/20 text-[#E9C46A] px-5 py-3 rounded-sm">
-              <Trophy className="w-6 h-6" />
+          <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-3">
+            {rankings?.batting?.rank && (
               <div>
-                <div className="font-bebas text-2xl leading-none">{general.mvps}</div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-80">MVP Awards</div>
+                <dt className="label">Batting rank</dt>
+                <dd className="num mt-1 text-xl leading-none text-paper">#{rankings.batting.rank}</dd>
               </div>
-            </div>
-          )}
+            )}
+            {rankings?.bowling?.rank && (
+              <div>
+                <dt className="label">Bowling rank</dt>
+                <dd className="num mt-1 text-xl leading-none text-paper">#{rankings.bowling.rank}</dd>
+              </div>
+            )}
+            {rankings?.allrounder?.rank && (
+              <div>
+                <dt className="label">All-rounder rank</dt>
+                <dd className="num mt-1 text-xl leading-none text-test">#{rankings.allrounder.rank}</dd>
+              </div>
+            )}
+            {general.mvps > 0 && (
+              <div>
+                <dt className="label">MVP awards</dt>
+                <dd className="num mt-1 text-xl leading-none text-test">{general.mvps}</dd>
+              </div>
+            )}
+          </dl>
         </div>
       </div>
 
-      <div className="space-y-10">
-        <div>
-          <h2 className="font-bebas text-3xl text-white tracking-wide mb-4">Batting & Fielding</h2>
-          <div className="overflow-x-auto shadow-2xl rounded-sm border border-ashes-border">
-            <table className="w-full text-right border-collapse bg-ashes-card">
+      <div className="mt-10 space-y-12">
+        <section aria-labelledby="batting-heading">
+          <div className="flex flex-wrap items-end justify-between gap-2 border-b border-rule pb-3">
+            <h2 id="batting-heading" className="display text-3xl">Batting &amp; fielding</h2>
+            <span className="label sm:hidden">Scroll table →</span>
+          </div>
+          <div className="scroll-x mt-4 border-y border-rule">
+            <table className="data-table min-w-[980px]">
+              <caption className="sr-only">Career batting and fielding figures</caption>
               <thead>
                 <tr>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider text-left min-w-[80px]">Format</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Mat</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Inns</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">NO</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Runs</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">HS</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Ave</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">BF</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">SR</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">200s</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">100s</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">50s</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">30s</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">4s</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">6s</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Ducks</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">AFK %</th>
+                  <th scope="col" className="text-left">Scope</th>
+                  {batStats.map(([label]) => (
+                    <th key={String(label)} scope="col" className="whitespace-nowrap text-right">
+                      {label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                <tr className="hover:bg-ashes-card-light transition-colors">
-                  <td className="border-b border-ashes-border p-3 font-medium text-white text-sm text-left">Test</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.matches}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.innings}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.notOuts}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-white font-medium">{batting.runs}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.highestScore}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-white font-medium">{batting.average}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.balls}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.strikeRate}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.twoHundreds}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.hundreds}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.fifties}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.thirties}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.fours}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.sixes}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.ducks}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{batting.afkPct}%</td>
+                <tr>
+                  <td className="whitespace-nowrap text-sm font-medium text-paper">All formats</td>
+                  {batStats.map(([label, value]) => (
+                    <td key={String(label)} className="num whitespace-nowrap text-right text-sm">
+                      {value}
+                    </td>
+                  ))}
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
-        <div>
-          <h2 className="font-bebas text-3xl text-white tracking-wide mb-4">Bowling</h2>
-          <div className="overflow-x-auto shadow-2xl rounded-sm border border-ashes-border">
-            <table className="w-full text-right border-collapse bg-ashes-card">
+        <section aria-labelledby="bowling-heading">
+          <div className="flex flex-wrap items-end justify-between gap-2 border-b border-rule pb-3">
+            <h2 id="bowling-heading" className="display text-3xl">Bowling</h2>
+            <span className="label sm:hidden">Scroll table →</span>
+          </div>
+          <div className="scroll-x mt-4 border-y border-rule">
+            <table className="data-table min-w-[980px]">
+              <caption className="sr-only">Career bowling figures</caption>
               <thead>
                 <tr>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider text-left min-w-[80px]">Format</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Mat</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Inns</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Balls</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Runs</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Wkts</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">BBI</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Ave</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Econ</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">SR</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">3w</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">5w</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">10w</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">Hattricks</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">4s</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">6s</th>
-                  <th className="border-b border-ashes-border p-3 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-wider">AFK %</th>
+                  <th scope="col" className="text-left">Scope</th>
+                  {bowlStats.map(([label]) => (
+                    <th key={String(label)} scope="col" className="whitespace-nowrap text-right">
+                      {label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                <tr className="hover:bg-ashes-card-light transition-colors">
-                  <td className="border-b border-ashes-border p-3 font-medium text-white text-sm text-left">Test</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.matches}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.innings}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.balls}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.runs}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-white font-medium">{bowling.wickets}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.bbi}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-white font-medium">{bowling.average}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.economy}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.strikeRate}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.threeWickets}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.fiveWickets}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.tenWickets}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.hattricks}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.foursConceded}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.sixesConceded}</td>
-                  <td className="border-b border-ashes-border p-3 text-sm text-ashes-muted">{bowling.afkPct}%</td>
+                <tr>
+                  <td className="whitespace-nowrap text-sm font-medium text-paper">All formats</td>
+                  {bowlStats.map(([label, value]) => (
+                    <td key={String(label)} className="num whitespace-nowrap text-right text-sm">
+                      {value}
+                    </td>
+                  ))}
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
         {recentPerformances && recentPerformances.length > 0 && (
-          <div className="mt-10">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bebas text-3xl text-white tracking-wide">Recent Performances</h2>
-              <select value={recentCount} onChange={(e) => setRecentCount(Number(e.target.value))} className="bg-ashes-card border border-ashes-border text-white text-sm font-mono uppercase tracking-widest rounded-sm px-3 py-1.5 outline-none focus:border-ashes-red cursor-pointer">
-                {[5, 10, 15, 20].map(num => (
-                  <option key={num} value={num}>Last {num}</option>
-                ))}
-              </select>
+          <section aria-labelledby="recent-heading">
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-rule pb-3">
+              <h2 id="recent-heading" className="display text-3xl">Recent performances</h2>
+              <div className="flex items-center gap-2">
+                <label htmlFor="recent-count" className="label">Show</label>
+                <select
+                  id="recent-count"
+                  value={recentCount}
+                  onChange={(event) => setRecentCount(Number(event.target.value))}
+                  className="select w-28 py-1.5 text-xs"
+                >
+                  {[5, 10, 15, 20].map((count) => (
+                    <option key={count} value={count}>Last {count}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-4">
-              {recentPerformances.map((perf: any, i: number) => (
-                <Link to={`/match/${perf.matchId}`} key={i} className="bg-ashes-card border border-ashes-border p-4 pt-8 rounded-sm min-w-[200px] flex flex-col gap-2 shadow-xl relative group hover:border-ashes-red transition-colors block">
-                  <div className="text-[10px] font-mono text-ashes-very-muted absolute top-2 right-3 group-hover:text-white transition-colors">
-                    {new Date(perf.timestamp * 1000).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                  </div>
-                  <div className="flex items-start gap-2 text-white font-mono text-sm">
-                    <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-ashes-very-muted pt-0.5">BAT</span>
-                    <span className="font-medium tracking-wide">{perf.bat}</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-ashes-muted font-mono text-sm group-hover:text-zinc-300 transition-colors">
-                    <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-ashes-very-muted pt-0.5">BOWL</span>
-                    <span className="font-medium tracking-wide">{perf.bowl}</span>
-                  </div>
+
+            <div className="border-t border-rule">
+              {recentPerformances.map((performance: any, index: number) => (
+                <Link
+                  key={index}
+                  to={`/match/${performance.matchId}`}
+                  className="grid gap-2 border-b border-rule py-3 transition-colors hover:bg-ink-raised sm:grid-cols-[140px_minmax(0,1fr)_minmax(0,1fr)] sm:items-baseline"
+                >
+                  <span className="label">
+                    {new Date(performance.timestamp * 1000).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                  <span className="min-w-0 text-sm">
+                    <span className="label mr-2">Bat</span>
+                    <span className="num text-paper">{performance.bat}</span>
+                  </span>
+                  <span className="min-w-0 text-sm">
+                    <span className="label mr-2">Bowl</span>
+                    <span className="num text-paper-soft">{performance.bowl}</span>
+                  </span>
                 </Link>
               ))}
             </div>
-          </div>
+          </section>
         )}
       </div>
     </>

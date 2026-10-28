@@ -9,8 +9,8 @@ const NAV_ITEMS = [
   { to: "/", label: "Home", matches: (path: string) => path === "/" },
   { to: "/matches", label: "Matches", matches: (path: string) => path.startsWith("/match") || path.startsWith("/live") },
   { to: "/leaderboard", label: "Leaderboard", matches: (path: string) => path.startsWith("/leaderboard") },
-  { to: "/players", label: "Players", matches: (path: string) => path.startsWith("/player") },
   { to: "/rankings", label: "Rankings", matches: (path: string) => path.startsWith("/rankings") },
+  { to: "/players", label: "Players", matches: (path: string) => path.startsWith("/player") },
 ];
 
 export function Layout() {
@@ -21,29 +21,40 @@ export function Layout() {
     setMenuOpen(false);
   }, [location.pathname]);
 
+  const today = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  }).format(new Date());
+
   return (
     <div className="flex min-h-screen flex-col">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-sm focus:bg-ashes-red focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:border focus:border-ball focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:text-paper"
       >
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-50 border-b border-ashes-border bg-ashes-dark/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-[1120px] items-center justify-between gap-6 px-4 md:h-20 md:px-8">
-          <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
+      <header className="sticky top-0 z-50 border-b border-rule bg-ink">
+        <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between gap-4 px-4 md:h-[72px] md:px-8">
+          <Link to="/" className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80">
             <img
               src="https://cdn.discordapp.com/avatars/1443165621100740668/40ef4cf2ee6a72db2a5af55c231192bd.png?size=64"
-              alt="Ashes logo"
-              width={40}
-              height={40}
-              className="h-9 w-9 rounded-full border border-ashes-border md:h-10 md:w-10"
+              alt=""
+              width={32}
+              height={32}
+              className="h-8 w-8 shrink-0 border border-rule object-cover"
             />
-            <span className="font-bebas text-2xl font-bold tracking-tight text-white">ASHES</span>
+            <span className="min-w-0">
+              <span className="display block text-xl leading-none">Ashes</span>
+              <span className="label mt-1 hidden text-[8px] tracking-[0.2em] sm:block">
+                Test &amp; T15 cricket
+              </span>
+            </span>
           </Link>
 
-          <nav aria-label="Primary" className="hidden items-center gap-8 md:flex">
+          <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
             {NAV_ITEMS.map((item) => {
               const active = item.matches(location.pathname);
               return (
@@ -51,27 +62,33 @@ export function Layout() {
                   key={item.to}
                   to={item.to}
                   aria-current={active ? "page" : undefined}
-                  className={`relative py-2 font-mono text-[11px] font-medium uppercase tracking-[0.18em] transition-colors ${
-                    active ? "text-white" : "text-ashes-very-muted hover:text-white"
-                  }`}
+                  className="group inline-flex items-center gap-2"
                 >
-                  {item.label}
                   <span
-                    className={`absolute inset-x-0 -bottom-[21px] h-px bg-ashes-red transition-opacity ${
-                      active ? "opacity-100" : "opacity-0"
+                    aria-hidden="true"
+                    className={`h-1 w-1 transition-colors ${
+                      active ? "bg-ball" : "bg-transparent group-hover:bg-paper-mute"
                     }`}
                   />
+                  <span
+                    className={`font-mono text-[10px] font-medium uppercase tracking-[0.18em] transition-colors ${
+                      active ? "text-paper" : "text-paper-mute group-hover:text-paper"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <span className="label hidden lg:block">{today}</span>
             <a
               href={INVITE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden items-center gap-1.5 rounded-sm bg-ashes-red px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:bg-ashes-red-hover sm:inline-flex"
+              className="btn btn-solid hidden py-2 sm:inline-flex"
             >
               Add to Discord
               <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -82,7 +99,7 @@ export function Layout() {
               aria-expanded={menuOpen}
               aria-controls="mobile-nav"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-ashes-border text-ashes-muted transition-colors hover:border-ashes-border-light hover:text-white md:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center border border-rule text-paper-soft transition-colors hover:border-paper-mute hover:text-paper md:hidden"
             >
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -90,8 +107,12 @@ export function Layout() {
         </div>
 
         {menuOpen && (
-          <nav id="mobile-nav" aria-label="Mobile" className="border-t border-ashes-border bg-ashes-dark/95 px-4 py-3 md:hidden">
-            <div className="mx-auto flex max-w-[1120px] flex-col">
+          <nav
+            id="mobile-nav"
+            aria-label="Mobile"
+            className="border-t border-rule bg-ink px-4 pb-5 pt-2 md:hidden"
+          >
+            <div className="mx-auto flex max-w-[1200px] flex-col">
               {NAV_ITEMS.map((item) => {
                 const active = item.matches(location.pathname);
                 return (
@@ -100,12 +121,19 @@ export function Layout() {
                     to={item.to}
                     onClick={() => setMenuOpen(false)}
                     aria-current={active ? "page" : undefined}
-                    className={`flex items-center justify-between rounded-sm px-3 py-3 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors ${
-                      active ? "bg-white/5 text-white" : "text-ashes-muted hover:bg-white/5 hover:text-white"
-                    }`}
+                    className="flex items-center justify-between gap-4 border-b border-rule-soft py-3.5"
                   >
-                    {item.label}
-                    {active && <span className="h-1.5 w-1.5 rounded-full bg-ashes-red" aria-hidden="true" />}
+                    <span
+                      className={`display whitespace-nowrap text-xl leading-none ${
+                        active ? "text-paper" : "text-paper-soft"
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className={`h-1.5 w-1.5 shrink-0 ${active ? "bg-ball" : "bg-rule"}`}
+                    />
                   </Link>
                 );
               })}
@@ -113,7 +141,7 @@ export function Layout() {
                 href={INVITE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-sm bg-ashes-red px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-white sm:hidden"
+                className="btn btn-solid mt-5"
               >
                 Add to Discord
                 <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -123,60 +151,61 @@ export function Layout() {
         )}
       </header>
 
-      <main id="main" className="mx-auto w-full max-w-[1120px] flex-1 px-4 py-8 md:px-8 md:py-12">
+      <main id="main" className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-8 md:px-8 md:py-12">
         <Outlet />
       </main>
 
-      <footer className="border-t border-ashes-border bg-black/20">
-        <div className="mx-auto w-full max-w-[1120px] px-4 py-10 md:px-8 md:py-14">
-          <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
+      <footer className="border-t border-rule bg-ink-sunken">
+        <div className="mx-auto w-full max-w-[1200px] px-4 py-12 md:px-8 md:py-16">
+          <div className="grid gap-10 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]">
             <div className="max-w-sm">
-              <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
+              <Link to="/" className="inline-flex items-center gap-3 transition-opacity hover:opacity-80">
                 <img
                   src="https://cdn.discordapp.com/avatars/1443165621100740668/40ef4cf2ee6a72db2a5af55c231192bd.png?size=64"
                   alt=""
                   width={32}
                   height={32}
-                  className="h-8 w-8 rounded-full border border-ashes-border"
+                  className="h-8 w-8 border border-rule object-cover"
                 />
-                <span className="font-bebas text-xl font-bold tracking-tight text-white">ASHES</span>
+                <span className="display text-xl leading-none">Ashes</span>
               </Link>
-              <p className="mt-4 text-sm leading-relaxed text-ashes-muted">
-                A real-time Test cricket simulator for Discord. Host matches, track every delivery, and compete on global leaderboards.
+              <p className="mt-4 text-sm leading-relaxed text-paper-mute">
+                A real-time Test and T15 cricket simulator for Discord. Host matches, follow every
+                delivery, and keep a permanent record of the game.
               </p>
             </div>
 
             <div>
-              <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.24em] text-ashes-very-muted">Explore</h2>
+              <h2 className="label">Scorebook</h2>
               <ul className="mt-4 space-y-2.5 text-sm">
-                <li><Link to="/matches" className="text-ashes-muted transition-colors hover:text-white">Matches</Link></li>
-                <li><Link to="/leaderboard" className="text-ashes-muted transition-colors hover:text-white">Leaderboard</Link></li>
-                <li><Link to="/players" className="text-ashes-muted transition-colors hover:text-white">Players</Link></li>
-                <li><Link to="/rankings" className="text-ashes-muted transition-colors hover:text-white">Rankings</Link></li>
+                <li><Link to="/matches" className="text-paper-mute transition-colors hover:text-paper">Matches</Link></li>
+                <li><Link to="/leaderboard" className="text-paper-mute transition-colors hover:text-paper">Leaderboard</Link></li>
+                <li><Link to="/rankings" className="text-paper-mute transition-colors hover:text-paper">Rankings</Link></li>
+                <li><Link to="/players" className="text-paper-mute transition-colors hover:text-paper">Players</Link></li>
               </ul>
             </div>
 
             <div>
-              <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.24em] text-ashes-very-muted">Community</h2>
+              <h2 className="label">Community</h2>
               <ul className="mt-4 space-y-2.5 text-sm">
                 <li>
-                  <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-ashes-muted transition-colors hover:text-white">
+                  <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-paper-mute transition-colors hover:text-paper">
                     Add to Discord <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
                   </a>
                 </li>
                 <li>
-                  <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-ashes-muted transition-colors hover:text-white">
+                  <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-paper-mute transition-colors hover:text-paper">
                     Support server <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
                   </a>
                 </li>
-                <li><Link to="/" className="text-ashes-muted transition-colors hover:text-white">How to play</Link></li>
+                <li><Link to="/" className="text-paper-mute transition-colors hover:text-paper">How to play</Link></li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-10 flex flex-col gap-2 border-t border-ashes-border pt-6 text-[11px] text-ashes-very-muted sm:flex-row sm:items-center sm:justify-between">
-            <p>&copy; {new Date().getFullYear()} Ashes. All rights reserved.</p>
-            <p>Not affiliated with Discord Inc.</p>
+          <div className="mt-10 flex flex-col gap-2 border-t border-rule pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="label">&copy; {new Date().getFullYear()} Ashes</p>
+            <p className="label">Not affiliated with Discord Inc.</p>
           </div>
         </div>
       </footer>

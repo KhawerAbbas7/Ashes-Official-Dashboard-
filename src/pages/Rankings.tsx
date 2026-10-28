@@ -1,28 +1,20 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { ChevronDown } from "lucide-react";
+import { Link } from "react-router-dom";
 import { fetchRankings } from "../api";
 import { PageHeader } from "../components/PageHeader";
+
 const TYPES: Record<string, string> = {
-  "Batting": "batting",
-  "Bowling": "bowling",
+  Batting: "batting",
+  Bowling: "bowling",
   "All-Rounder": "allrounder",
 };
+
 export function Rankings() {
   const [selectedType, setSelectedType] = useState("Batting");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+
   useEffect(() => {
     setLoading(true);
     fetchRankings(TYPES[selectedType])
@@ -35,77 +27,97 @@ export function Rankings() {
         setLoading(false);
       });
   }, [selectedType]);
+
+  const rows = data?.data || [];
+
   return (
     <>
       <Helmet>
         <title>Rankings · Ashes</title>
         <meta name="description" content="View global player rankings across all servers." />
       </Helmet>
+
       <PageHeader
-        eyebrow="Player ratings"
         title="Rankings"
-        description="Official batting, bowling, and all-rounder ratings, updated from match results."
+        description="Batting, bowling and all-rounder ratings, calculated from Test match results."
       />
-      <div className="mb-6 w-full max-w-xs relative" ref={dropdownRef}>
-        <button onClick={() => setIsOpen(!isOpen)} className="flex w-full items-center justify-between bg-ashes-card border border-ashes-border text-white font-sans text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red hover:border-ashes-red transition-colors cursor-pointer">
-          <span>{selectedType}</span>
-          <ChevronDown className={`w-4 h-4 text-ashes-very-muted transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
-        </button>
-        {isOpen && (
-          <div className="absolute z-10 w-full mt-1 bg-ashes-card border border-ashes-border rounded-sm shadow-xl max-h-72 overflow-y-auto">
-            {Object.keys(TYPES).map((type) => (
-              <div key={type} onClick={() => { setSelectedType(type); setIsOpen(false); }} className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${selectedType === type ? "bg-ashes-card-light text-white font-medium" : "text-ashes-muted hover:bg-ashes-card-light hover:text-white"}`}>
-                {type}
-              </div>
-            ))}
-          </div>
+
+      <div className="scroll-x flex gap-6 border-b border-rule">
+        {Object.keys(TYPES).map((type) => (
+          <button
+            key={type}
+            type="button"
+            onClick={() => setSelectedType(type)}
+            aria-pressed={selectedType === type}
+            className="tab"
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-2">
+        <h2 className="display text-3xl">{selectedType} rankings</h2>
+        {data?.cutoff && (
+          <p className="label">
+            As of{" "}
+            {new Date(data.cutoff * 1000).toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
         )}
       </div>
-      {loading && <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Loading...</div>}
-      {!loading && (!data || !data.data || data.data.length === 0) && (
-        <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">No data available.</div>
+
+      {loading && <p className="label py-12 text-center">Calculating ratings…</p>}
+
+      {!loading && rows.length === 0 && (
+        <p className="label py-12 text-center">No data available</p>
       )}
-      {!loading && data && data.data && data.data.length > 0 && (
-        <div>
-          <div className="mb-6 flex justify-between items-end">
-            <div className="space-y-1">
-              <h2 className="font-bebas text-3xl text-white tracking-wide leading-none">{selectedType} Rankings</h2>
-              {data.cutoff && (
-                <p className="text-ashes-muted font-mono text-xs uppercase tracking-widest mt-2">
-                  Last Updated: {new Date(data.cutoff * 1000).toLocaleString(undefined, { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="overflow-x-auto shadow-2xl rounded-sm">
-            <table className="w-full text-left border-collapse bg-ashes-card">
-              <thead>
-                <tr>
-                  <th className="border-b border-ashes-border p-4 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-[0.2em] w-16">Rank</th>
-                  <th className="border-b border-ashes-border p-4 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-[0.2em]">Player</th>
-                  <th className="border-b border-ashes-border p-4 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-[0.2em] text-right">Rating</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.data.map((player: any, i: number) => (
-                  <tr key={i} className="hover:bg-ashes-card-light transition-colors group">
-                    <td className="border-b border-ashes-border p-4 font-mono text-xs text-ashes-very-muted">{i + 1 + (data.page - 1) * data.limit}</td>
-                    <td className="border-b border-ashes-border p-4 font-medium text-white text-sm flex items-center gap-3">
-                      <img src={player.profileImageUrl} alt={player.playerName} className="w-8 h-8 rounded-full bg-ashes-card-light" />
-                      {player.playerName}
+
+      {!loading && rows.length > 0 && (
+        <div className="scroll-x mt-4 border-y border-rule">
+          <table className="data-table min-w-[520px]">
+            <thead>
+              <tr>
+                <th scope="col" className="w-16">Rank</th>
+                <th scope="col">Player</th>
+                <th scope="col" className="text-right">Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((player: any, index: number) => {
+                const rank = index + 1 + (data.page - 1) * data.limit;
+                return (
+                  <tr key={player.playerId || index}>
+                    <td className={`num text-xs ${rank <= 3 ? "text-ball" : "text-paper-mute"}`}>{rank}</td>
+                    <td>
+                      <Link
+                        to={`/player/${player.playerId}`}
+                        className="flex min-w-0 items-center gap-3 text-sm font-medium text-paper transition-colors hover:text-ball"
+                      >
+                        {player.profileImageUrl && (
+                          <img
+                            src={player.profileImageUrl}
+                            alt=""
+                            width={32}
+                            height={32}
+                            loading="lazy"
+                            className="h-8 w-8 shrink-0 border border-rule object-cover"
+                          />
+                        )}
+                        <span className="min-w-0 truncate">{player.playerName}</span>
+                      </Link>
                     </td>
-                    <td className="border-b border-ashes-border p-4 text-sm text-ashes-muted text-right font-mono">{player.rating}</td>
+                    <td className="num text-right text-base text-paper">{player.rating}</td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </>

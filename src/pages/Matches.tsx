@@ -5,7 +5,18 @@ import { RefreshCw, Search, SlidersHorizontal, X } from "lucide-react";
 import { fetchLiveMatches, fetchMatches } from "../api";
 import { getResultText, getScoreString } from "../utils";
 import { PageHeader } from "../components/PageHeader";
-import { FormatBadge, FormatLegend } from "../components/MatchFormat";
+import { FormatBadge, FormatKey } from "../components/MatchFormat";
+
+function matchDate(timestamp?: number) {
+  if (!timestamp) return null;
+  return new Date(timestamp * 1000).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export function Matches() {
   const [activeTab, setActiveTab] = useState<"live" | "recent">("recent");
@@ -64,116 +75,166 @@ export function Matches() {
       </Helmet>
 
       <PageHeader
-        eyebrow="Fixtures & results"
         title="Matches"
-        description="Browse completed scorecards or follow live matches and open lobbies. Every match is clearly labelled Test or T15."
+        description="Completed scorecards, live matches and open lobbies. Every match is marked Test or T15."
       />
 
-      <FormatLegend />
+      <FormatKey />
 
-      <div className="flex w-full mb-6 border-b border-ashes-border">
-        <button
-          onClick={() => setActiveTab("recent")}
-          aria-pressed={activeTab === "recent"}
-          className={`flex-1 md:flex-none font-mono text-[10px] uppercase tracking-[0.2em] px-4 md:px-6 py-4 transition-colors text-center ${
-            activeTab === "recent"
-              ? "text-ashes-red border-b-2 border-ashes-red font-bold"
-              : "text-ashes-muted hover:text-white"
-          }`}
-        >
-          Recent Matches
-        </button>
-        <button
-          onClick={() => setActiveTab("live")}
-          aria-pressed={activeTab === "live"}
-          className={`flex-1 md:flex-none font-mono text-[10px] uppercase tracking-[0.2em] px-4 md:px-6 py-4 transition-colors text-center ${
-            activeTab === "live"
-              ? "text-ashes-red border-b-2 border-ashes-red font-bold"
-              : "text-ashes-muted hover:text-white"
-          }`}
-        >
-          Live
-        </button>
+      <div className="mt-8 flex items-center justify-between gap-4 border-b border-rule">
+        <div className="flex gap-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab("recent")}
+            aria-pressed={activeTab === "recent"}
+            className="tab"
+          >
+            Recent
+            {recentMatches.length > 0 && <span className="num ml-2 text-paper-mute">{recentMatches.length}</span>}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("live")}
+            aria-pressed={activeTab === "live"}
+            className="tab"
+          >
+            Live
+            {liveMatches.length > 0 && <span className="num ml-2 text-paper-mute">{liveMatches.length}</span>}
+          </button>
+        </div>
+        {activeTab === "live" && (
+          <button type="button" onClick={loadLiveMatches} className="btn btn-quiet mb-1 py-2">
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+            Refresh
+          </button>
+        )}
       </div>
 
       {activeTab === "recent" && (
         <div>
-          <div className="flex flex-col sm:flex-row mb-4 gap-2">
-            <input
-              type="text"
-              aria-label="Search matches"
-              placeholder="Search matches..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && loadRecentMatches()}
-              className="flex-1 bg-ashes-card border border-ashes-border text-white font-sans text-sm rounded-sm px-4 py-3 sm:py-2.5 outline-none focus:border-ashes-red w-full"
-            />
-            <div className="flex gap-2 w-full sm:w-auto">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              loadRecentMatches();
+            }}
+            role="search"
+            className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end"
+          >
+            <div className="min-w-0 flex-1">
+              <label htmlFor="match-search" className="label">
+                Search
+              </label>
+              <input
+                id="match-search"
+                type="search"
+                placeholder="Team, match ID or winner"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="field mt-1"
+              />
+            </div>
+            <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setShowFilters(!showFilters)}
                 aria-expanded={showFilters}
-                className="inline-flex flex-1 items-center justify-center gap-2 sm:flex-none bg-ashes-card border border-ashes-border text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-3 sm:py-2.5 rounded-sm hover:border-ashes-red hover:text-white transition-colors whitespace-nowrap"
+                className="btn btn-quiet"
               >
-                {showFilters ? <X className="h-3.5 w-3.5" aria-hidden="true" /> : <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />}
-                {showFilters ? "Hide" : "Filters"}
+                {showFilters ? (
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {showFilters ? "Hide filters" : "Filters"}
               </button>
-              <button
-                onClick={loadRecentMatches}
-                className="inline-flex flex-1 items-center justify-center gap-2 sm:flex-none bg-ashes-red text-white font-mono text-[10px] uppercase tracking-[0.2em] px-6 py-3 sm:py-2.5 rounded-sm hover:bg-ashes-red-hover transition-colors whitespace-nowrap font-bold"
-              >
+              <button type="submit" className="btn btn-solid">
                 <Search className="h-3.5 w-3.5" aria-hidden="true" />
                 Search
               </button>
             </div>
-          </div>
+          </form>
 
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <input type="text" aria-label="Server ID" placeholder="Server ID" value={guildId} onChange={(e) => setGuildId(e.target.value)} className="bg-ashes-card border border-ashes-border text-white text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red" />
-              <input type="text" aria-label="Channel ID" placeholder="Channel ID" value={channelId} onChange={(e) => setChannelId(e.target.value)} className="bg-ashes-card border border-ashes-border text-white text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red" />
-              <input type="text" aria-label="Player ID" placeholder="Player ID" value={playerId} onChange={(e) => setPlayerId(e.target.value)} className="bg-ashes-card border border-ashes-border text-white text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red" />
+            <div className="mt-4 grid gap-4 border-y border-rule py-4 sm:grid-cols-3">
+              <div>
+                <label htmlFor="filter-guild" className="label">Server ID</label>
+                <input
+                  id="filter-guild"
+                  type="text"
+                  value={guildId}
+                  onChange={(event) => setGuildId(event.target.value)}
+                  className="field mt-1"
+                />
+              </div>
+              <div>
+                <label htmlFor="filter-channel" className="label">Channel ID</label>
+                <input
+                  id="filter-channel"
+                  type="text"
+                  value={channelId}
+                  onChange={(event) => setChannelId(event.target.value)}
+                  className="field mt-1"
+                />
+              </div>
+              <div>
+                <label htmlFor="filter-player" className="label">Player ID</label>
+                <input
+                  id="filter-player"
+                  type="text"
+                  value={playerId}
+                  onChange={(event) => setPlayerId(event.target.value)}
+                  className="field mt-1"
+                />
+              </div>
             </div>
           )}
 
           {loadingRecent ? (
-            <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Loading...</div>
+            <p className="label py-12 text-center">Reading the scorebook…</p>
           ) : recentMatches.length === 0 ? (
-             <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">No Results Found</div>
+            <div className="border-b border-rule py-12 text-center">
+              <p className="label">No matches found</p>
+              <p className="mt-2 text-sm text-paper-mute">Try a different search or clear the filters.</p>
+            </div>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="mt-2">
               {recentMatches.map((match) => {
                 const teamA = match.teamAName || "Team A";
                 const teamB = match.teamBName || "Team B";
-                const ts = match.timestamp;
                 const taScores: string[] = [];
                 const tbScores: string[] = [];
-                
+
                 (match.innings || []).forEach((inn: any) => {
-                  const scoreStr = getScoreString(inn);
-                  if (inn.battingTeam === teamA) taScores.push(scoreStr);
-                  else if (inn.battingTeam === teamB) tbScores.push(scoreStr);
+                  const score = getScoreString(inn);
+                  if (inn.battingTeam === teamA) taScores.push(score);
+                  else if (inn.battingTeam === teamB) tbScores.push(score);
                 });
 
                 return (
-                  <div key={match.id} className="bg-ashes-card border border-ashes-border border-l-[3px] border-l-ashes-red hover:border-ashes-red/30 transition-colors rounded-sm overflow-hidden flex flex-col md:flex-row shadow-lg">
-                    <div className="p-4 md:p-6 flex flex-col items-start w-full md:w-3/4">
-                      <div className="font-mono text-[10px] text-ashes-very-muted uppercase tracking-[0.2em] mb-4 flex items-center flex-wrap gap-2">
+                  <Link
+                    key={match.id}
+                    to={`/match/${match.id}`}
+                    className="group grid gap-3 border-b border-rule py-5 transition-colors hover:bg-ink-raised sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <FormatBadge match={match} detail />
-                        {ts ? <span className="block">{new Date(ts * 1000).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} <span className="hidden sm:inline">·</span></span> : ""} <span>{match.guildName || "—"}</span> <span className="hidden sm:inline">·</span> <span>{match.channelName || "—"}</span>
+                        {match.timestamp && <span className="label">{matchDate(match.timestamp)}</span>}
+                        <span className="label">
+                          {match.guildName || "—"} · {match.channelName || "—"}
+                        </span>
                       </div>
-                      <div className="font-bebas text-2xl sm:text-3xl text-white tracking-wide mb-4 flex flex-wrap items-center leading-none">
-                        {teamA} {taScores.length > 0 && <span className="font-mono text-ashes-red text-base sm:text-lg mx-2 tracking-normal">{taScores.join(" & ")}</span>}
-                        <span className="text-ashes-very-muted text-base sm:text-lg mx-3 font-sans tracking-widest italic">VS</span>
-                        {teamB} {tbScores.length > 0 && <span className="font-mono text-ashes-red text-base sm:text-lg mx-2 tracking-normal">{tbScores.join(" & ")}</span>}
-                      </div>
-                      <div className="inline-flex items-center bg-ashes-card-light border border-ashes-border-light text-zinc-300 font-mono text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-[0.1em]">
-                        <span className="text-ashes-red mr-2 font-bold">RES</span> {getResultText(match)}
-                      </div>
+                      <p className="display mt-2 text-2xl leading-tight sm:text-3xl">
+                        {teamA}{" "}
+                        {taScores.length > 0 && <span className="num text-base text-ball">{taScores.join(" & ")}</span>}
+                        <span className="mx-2 font-sans text-[10px] uppercase tracking-[0.2em] text-paper-mute">v</span>
+                        {teamB}{" "}
+                        {tbScores.length > 0 && <span className="num text-base text-ball">{tbScores.join(" & ")}</span>}
+                      </p>
+                      <p className="mt-1 text-sm leading-snug text-paper-mute">{getResultText(match)}</p>
                     </div>
-                    <Link to={`/match/${match.id}`} className="block w-full md:w-1/4 bg-ashes-card-light/50 border-t md:border-t-0 md:border-l border-ashes-border flex items-center justify-center text-ashes-muted font-mono text-[10px] tracking-[0.2em] font-bold uppercase py-4 md:py-0 hover:bg-ashes-red hover:text-white transition-all">
-                      Scorecard →
-                    </Link>
-                  </div>
+                    <span className="label transition-colors group-hover:text-paper">Scorecard →</span>
+                  </Link>
                 );
               })}
             </div>
@@ -183,74 +244,78 @@ export function Matches() {
 
       {activeTab === "live" && (
         <div>
-          <div className="flex justify-start mb-6">
-            <button onClick={loadLiveMatches} className="inline-flex items-center gap-2 font-mono text-[10px] text-zinc-400 border border-ashes-border bg-ashes-card px-4 py-2 hover:text-white hover:border-ashes-red/50 transition-colors uppercase tracking-[0.2em] rounded-sm">
-              <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-              Refresh
-            </button>
-          </div>
-          {loadingLive ? (
-            <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Loading...</div>
+          {loadingLive && liveMatches.length === 0 ? (
+            <p className="label py-12 text-center">Reading the live wire…</p>
           ) : liveMatches.length === 0 ? (
-            <div className="text-center mt-12">
-              <div className="font-mono text-xs text-ashes-muted uppercase tracking-[0.3em]">No Live Matches</div>
-              <div className="font-mono text-[10px] text-ashes-very-muted uppercase tracking-[0.2em] mt-3">Check back soon</div>
+            <div className="border-b border-rule py-12 text-center">
+              <p className="label">No live matches</p>
+              <p className="mt-2 text-sm text-paper-mute">Open lobbies and matches in progress will appear here.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="mt-2">
               {liveMatches.map((match) => {
                 const teamA = match.teamAName || "Team A";
                 const teamB = match.teamBName || "Team B";
                 const isLive = match.state === "live";
-                
                 const taScores: string[] = [];
                 const tbScores: string[] = [];
+
                 (match.innings || []).forEach((inn: any) => {
-                  const scoreStr = getScoreString(inn);
-                  if (inn.battingTeam === teamA) taScores.push(scoreStr);
-                  else if (inn.battingTeam === teamB) tbScores.push(scoreStr);
+                  const score = getScoreString(inn);
+                  if (inn.battingTeam === teamA) taScores.push(score);
+                  else if (inn.battingTeam === teamB) tbScores.push(score);
                 });
 
                 return (
-                  <div key={match.id} className={`bg-ashes-card border border-ashes-border border-l-[3px] rounded-sm overflow-hidden flex flex-col md:flex-row shadow-lg ${isLive ? 'border-l-[#10b981]' : 'border-l-[#eab308]'}`}>
-                    <div className="p-4 md:p-6 flex flex-col items-start w-full md:w-3/4">
-                      <div className="font-mono text-[10px] text-ashes-very-muted uppercase tracking-[0.2em] mb-4 flex flex-wrap items-center gap-3">
-                        {isLive ? (
-                          <span className="inline-flex items-center gap-1.5 bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 px-2 py-0.5 rounded-sm">
-                            <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full animate-pulse"></span>
-                            Live
+                  <Link
+                    key={match.id}
+                    to={`/live/${match.id}`}
+                    className="group grid gap-3 border-b border-rule py-5 transition-colors hover:bg-ink-raised sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span
+                            aria-hidden="true"
+                            className={`h-1.5 w-1.5 rounded-full ${isLive ? "animate-pulse bg-live" : "bg-lobby"}`}
+                          />
+                          <span className={`label ${isLive ? "text-live" : "text-lobby"}`}>
+                            {isLive ? "Live" : "Lobby"}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 bg-[#eab308]/10 text-[#eab308] border border-[#eab308]/20 px-2 py-0.5 rounded-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#eab308]" aria-hidden="true" />
-                            Lobby
-                          </span>
-                        )}
+                        </span>
                         <FormatBadge match={match} detail />
-                        {match.guildName || "—"} · {match.channelName || "—"}
+                        <span className="label">
+                          {match.guildName || "—"} · {match.channelName || "—"}
+                        </span>
                       </div>
-                      <div className="font-bebas text-2xl sm:text-3xl text-white tracking-wide mb-2 flex flex-wrap items-center">
-                        {teamA} {taScores.length > 0 && <span className="font-mono text-ashes-red text-base sm:text-lg mx-2 tracking-normal">{taScores.join(" & ")}</span>}
-                        <span className="text-ashes-very-muted text-base sm:text-lg mx-3 font-sans tracking-widest italic">VS</span>
-                        {teamB} {tbScores.length > 0 && <span className="font-mono text-ashes-red text-base sm:text-lg mx-2 tracking-normal">{tbScores.join(" & ")}</span>}
-                      </div>
+                      <p className="display mt-2 text-2xl leading-tight sm:text-3xl">
+                        {teamA}{" "}
+                        {taScores.length > 0 && <span className="num text-base text-ball">{taScores.join(" & ")}</span>}
+                        <span className="mx-2 font-sans text-[10px] uppercase tracking-[0.2em] text-paper-mute">v</span>
+                        {teamB}{" "}
+                        {tbScores.length > 0 && <span className="num text-base text-ball">{tbScores.join(" & ")}</span>}
+                      </p>
                       {!isLive && (
-                        <div className="w-full mt-4 space-y-2">
-                           <div className="flex flex-col sm:flex-row sm:gap-3 sm:items-baseline">
-                             <span className="font-mono text-[10px] text-ashes-muted uppercase tracking-[0.2em] font-bold min-w-[60px] mb-1 sm:mb-0">{teamA}</span>
-                             <span className="font-mono text-[10px] text-ashes-very-muted truncate tracking-[0.1em]">{(match.teamAPlayers || []).map((p: any) => p.name || p).join(" · ") || "—"}</span>
-                           </div>
-                           <div className="flex flex-col sm:flex-row sm:gap-3 sm:items-baseline">
-                             <span className="font-mono text-[10px] text-ashes-muted uppercase tracking-[0.2em] font-bold min-w-[60px] mb-1 sm:mb-0">{teamB}</span>
-                             <span className="font-mono text-[10px] text-ashes-very-muted truncate tracking-[0.1em]">{(match.teamBPlayers || []).map((p: any) => p.name || p).join(" · ") || "—"}</span>
-                           </div>
-                        </div>
+                        <dl className="mt-3 grid gap-1.5">
+                          <div className="flex gap-3">
+                            <dt className="label w-20 shrink-0 pt-0.5">{teamA}</dt>
+                            <dd className="min-w-0 truncate font-mono text-[10px] leading-relaxed text-paper-mute">
+                              {(match.teamAPlayers || []).map((player: any) => player.name || player).join(" · ") || "—"}
+                            </dd>
+                          </div>
+                          <div className="flex gap-3">
+                            <dt className="label w-20 shrink-0 pt-0.5">{teamB}</dt>
+                            <dd className="min-w-0 truncate font-mono text-[10px] leading-relaxed text-paper-mute">
+                              {(match.teamBPlayers || []).map((player: any) => player.name || player).join(" · ") || "—"}
+                            </dd>
+                          </div>
+                        </dl>
                       )}
                     </div>
-                    <Link to={`/live/${match.id}`} className="block w-full md:w-1/4 bg-ashes-card-light/50 border-t md:border-t-0 md:border-l border-ashes-border flex items-center justify-center text-ashes-muted font-mono text-[10px] tracking-[0.2em] font-bold uppercase py-4 md:py-0 hover:bg-ashes-red hover:text-white transition-all">
-                      {isLive ? "Live Match →" : "Join Lobby →"}
-                    </Link>
-                  </div>
+                    <span className="label transition-colors group-hover:text-paper">
+                      {isLive ? "Follow live →" : "Join lobby →"}
+                    </span>
+                  </Link>
                 );
               })}
             </div>

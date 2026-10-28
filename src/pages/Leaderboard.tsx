@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { fetchLeaderboard } from "../api";
 import { PageHeader } from "../components/PageHeader";
@@ -38,22 +39,12 @@ const formatColumn = (key: string) =>
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/\b\w/g, (character) => character.toUpperCase());
 
+const HIDDEN_COLUMNS = ["rank", "player", "player2", "playerAvatar", "player2Avatar", "matchId"];
+
 export function Leaderboard() {
   const [selectedCategory, setSelectedCategory] = useState("Most Runs");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -68,117 +59,112 @@ export function Leaderboard() {
       });
   }, [selectedCategory]);
 
+  const rows = data?.data || [];
+  const columns = rows.length > 0 ? Object.keys(rows[0]).filter((key) => !HIDDEN_COLUMNS.includes(key)) : [];
+
   return (
     <>
       <Helmet>
         <title>Leaderboard · Ashes</title>
         <meta name="description" content="View global cricket leaderboards across all Discord servers." />
       </Helmet>
-      
+
       <PageHeader
-        eyebrow="Statistics"
-        title="Global Leaderboard"
+        title="Leaderboard"
         description="The best individual performances across every Ashes server."
       />
 
-      <div className="mb-6 w-full max-w-xs relative" ref={dropdownRef}>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex w-full items-center justify-between bg-ashes-card border border-ashes-border text-white font-sans text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red hover:border-ashes-red transition-colors cursor-pointer"
-        >
-          <span>{selectedCategory}</span>
-          <ChevronDown className={`w-4 h-4 text-ashes-very-muted transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
-        </button>
-
-        {isOpen && (
-          <div className="absolute z-10 w-full mt-1 bg-ashes-card border border-ashes-border rounded-sm shadow-xl max-h-72 overflow-y-auto">
-            {Object.keys(CATEGORIES).map((cat) => (
-              <div
-                key={cat}
-                onClick={() => {
-                  setSelectedCategory(cat);
-                  setIsOpen(false);
-                }}
-                className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
-                  selectedCategory === cat
-                    ? "bg-ashes-card-light text-white font-medium"
-                    : "text-ashes-muted hover:bg-ashes-card-light hover:text-white"
-                }`}
-              >
-                {cat}
-              </div>
-            ))}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+        <aside className="min-w-0">
+          <label htmlFor="leaderboard-category" className="label">
+            Category
+          </label>
+          <div className="relative mt-2">
+            <select
+              id="leaderboard-category"
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+              className="select"
+            >
+              {Object.keys(CATEGORIES).map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-paper-mute"
+              aria-hidden="true"
+            />
           </div>
-        )}
-      </div>
+          <p className="mt-4 text-xs leading-relaxed text-paper-mute">
+            All formats are included. Every category is drawn from completed matches on record.
+          </p>
+        </aside>
 
-      {loading && <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">Loading...</div>}
-
-      {!loading && (!data || !data.data || data.data.length === 0) && (
-        <div className="text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] text-center mt-12">No data available.</div>
-      )}
-
-      {!loading && data && data.data && data.data.length > 0 && (
-        <div>
-          <div className="mb-6 flex justify-between items-end">
-            <div className="space-y-1">
-              {data.note && <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-ashes-red font-bold">{data.note}</div>}
-              <h2 className="font-bebas text-3xl text-white tracking-wide leading-none">{data.title || selectedCategory}</h2>
-            </div>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-end justify-between gap-2 border-b border-rule pb-3">
+            <h2 className="display text-3xl">{data?.title || selectedCategory}</h2>
+            {data?.note && <span className="label text-ball">{data.note}</span>}
           </div>
 
-          <div className="overflow-x-auto shadow-2xl rounded-sm">
-            <table className="w-full text-left border-collapse bg-ashes-card">
-              <thead>
-                <tr>
-                  <th className="border-b border-ashes-border p-4 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-[0.2em]">#</th>
-                  <th className="border-b border-ashes-border p-4 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-[0.2em]">
-                    {data.data[0].player2 ? "Batters" : data.data[0].matchId ? "Match" : "Player"}
-                  </th>
-                  {Object.keys(data.data[0])
-                    .filter((k) => !["rank", "player", "player2", "playerAvatar", "player2Avatar", "matchId"].includes(k))
-                    .map((col) => (
-                      <th key={col} className="border-b border-ashes-border p-4 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-[0.2em] text-right">
-                        {formatColumn(col)}
+          {loading && <p className="label py-12 text-center">Reading the record book…</p>}
+
+          {!loading && rows.length === 0 && (
+            <p className="label py-12 text-center">No data available</p>
+          )}
+
+          {!loading && rows.length > 0 && (
+            <div className="scroll-x mt-4 border-y border-rule">
+              <table className="data-table min-w-[640px]">
+                <thead>
+                  <tr>
+                    <th scope="col" className="w-14">#</th>
+                    <th scope="col">
+                      {rows[0].player2 ? "Batters" : rows[0].matchId ? "Match" : "Player"}
+                    </th>
+                    {columns.map((column) => (
+                      <th key={column} scope="col" className="text-right">
+                        {formatColumn(column)}
                       </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data.data.map((entry: any, i: number) => {
-                  const isPartnership = !!entry.player2;
-                  const isMatch = !!entry.matchId;
-                  const name = isPartnership ? (
-                      `${entry.player || "—"} & ${entry.player2 || "—"}`
-                    ) : isMatch ? (
-                      <a
-                        href={`https://ashesdb.vercel.app/match/${entry.matchId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {entry.matchId.substring(0, 12)}…
-                      </a>
-                    ) : (
-                      entry.player || "—"
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((entry: any, index: number) => {
+                    const isPartnership = Boolean(entry.player2);
+                    const isMatch = Boolean(entry.matchId);
+
+                    return (
+                      <tr key={index}>
+                        <td className={`num text-xs ${index < 3 ? "text-ball" : "text-paper-mute"}`}>
+                          {entry.rank}
+                        </td>
+                        <td className="text-sm font-medium text-paper">
+                          {isPartnership ? (
+                            `${entry.player || "—"} & ${entry.player2 || "—"}`
+                          ) : isMatch ? (
+                            <Link to={`/match/${entry.matchId}`} className="link">
+                              {String(entry.matchId).substring(0, 12)}…
+                            </Link>
+                          ) : (
+                            entry.player || "—"
+                          )}
+                        </td>
+                        {columns.map((column) => (
+                          <td key={column} className="num text-right text-sm">
+                            {entry[column]}
+                          </td>
+                        ))}
+                      </tr>
                     );
-                  
-                  return (
-                    <tr key={i} className="hover:bg-ashes-card-light transition-colors group">
-                      <td className="border-b border-ashes-border p-4 font-mono text-xs text-ashes-very-muted">{entry.rank}</td>
-                      <td className="border-b border-ashes-border p-4 font-medium text-white text-sm">{name}</td>
-                      {Object.keys(entry)
-                        .filter((k) => !["rank", "player", "player2", "playerAvatar", "player2Avatar", "matchId"].includes(k))
-                        .map((col) => (
-                          <td key={col} className="border-b border-ashes-border p-4 text-sm text-ashes-muted text-right">{entry[col]}</td>
-                      ))}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </>
   );
 }

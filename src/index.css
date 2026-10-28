@@ -1,58 +1,183 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..800;1,400..800&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,300..700;1,300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
+/* Hallmark · macrostructure: almanac front page / results index / match programme / live wire / record book / dossier
+ * theme: Floodlit Almanac · genre: editorial
+ * pre-emit critique: P5 H5 E4 S5 R5 V5
+ * slop test: pass
+ */
+
 @theme {
-  --font-bebas: "Playfair Display", Georgia, serif;
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-ashes-dark: #09090b;
-  --color-ashes-card: rgba(24, 24, 27, 0.55);
-  --color-ashes-card-light: rgba(39, 39, 42, 0.55);
-  --color-ashes-border: rgba(255, 255, 255, 0.07);
-  --color-ashes-border-light: rgba(255, 255, 255, 0.12);
-  --color-ashes-red: #6366f1;
-  --color-ashes-red-hover: #4f46e5;
-  --color-ashes-text: #ffffff;
-  --color-ashes-muted: #a1a1aa;
-  --color-ashes-very-muted: #71717a;
+  --color-ink: oklch(0.16 0.014 155);
+  --color-ink-raised: oklch(0.2 0.016 155);
+  --color-ink-sunken: oklch(0.13 0.012 155);
+  --color-paper: oklch(0.95 0.012 90);
+  --color-paper-soft: oklch(0.82 0.014 95);
+  --color-paper-mute: oklch(0.66 0.014 110);
+  --color-rule: oklch(0.3 0.014 155);
+  --color-rule-soft: oklch(0.24 0.012 155);
+  --color-ball: oklch(0.64 0.19 32);
+  --color-ball-bright: oklch(0.72 0.17 38);
+  --color-test: oklch(0.84 0.09 90);
+  --color-t15: oklch(0.76 0.09 215);
+  --color-live: oklch(0.78 0.15 150);
+  --color-lobby: oklch(0.74 0.13 55);
 }
 
-html {
-  scroll-behavior: smooth;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    overflow-x: clip;
+    color-scheme: dark;
+    background-color: var(--color-ink);
+  }
+
+  body {
+    @apply bg-ink font-sans text-paper-soft antialiased;
+    min-height: 100vh;
+    overflow-x: clip;
+  }
+
+  h1,
+  h2,
+  h3 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ball);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background-color: var(--color-ball);
+    color: var(--color-ink);
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-ink);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-rule);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-paper-mute);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
-body {
-  @apply bg-ashes-dark text-zinc-300 font-sans antialiased;
-  min-height: 100vh;
-  background-image:
-    radial-gradient(70rem 42rem at 50% -12%, rgba(99, 102, 241, 0.12), transparent 65%),
-    radial-gradient(38rem 28rem at 100% 0%, rgba(99, 102, 241, 0.06), transparent 60%);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-}
+@layer components {
+  .display {
+    @apply font-display font-semibold tracking-[-0.02em] text-paper;
+    font-optical-sizing: auto;
+  }
 
-:focus-visible {
-  outline: 2px solid var(--color-ashes-red);
-  outline-offset: 2px;
-}
+  .label {
+    @apply font-mono text-[10px] font-medium uppercase leading-none tracking-[0.18em] text-paper-mute;
+  }
 
-::selection {
-  background-color: rgba(99, 102, 241, 0.35);
-  color: #fff;
-}
+  .label-strong {
+    @apply font-mono text-[10px] font-semibold uppercase leading-none tracking-[0.18em] text-paper;
+  }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--color-ashes-dark); }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.65); }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap border px-4 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .btn-solid {
+    @apply border-ball bg-ball text-ink hover:border-ball-bright hover:bg-ball-bright;
+  }
+
+  .btn-quiet {
+    @apply border-rule text-paper-soft hover:border-paper-mute hover:text-paper;
+  }
+
+  .btn-ghost {
+    @apply border-transparent text-paper-mute hover:border-rule hover:text-paper;
+  }
+
+  .field {
+    @apply w-full border-0 border-b border-rule bg-transparent px-0 py-2.5 font-sans text-sm text-paper placeholder:text-paper-mute focus:border-ball focus:outline-none;
+  }
+
+  .select {
+    @apply w-full appearance-none border border-rule bg-ink px-3 py-2.5 pr-9 font-sans text-sm text-paper focus:border-ball focus:outline-none;
+  }
+
+  .panel {
+    @apply border border-rule bg-ink-raised;
+  }
+
+  .tab {
+    @apply relative -mb-px shrink-0 whitespace-nowrap border-b-2 border-transparent px-0 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-paper-mute transition-colors hover:text-paper;
+  }
+
+  .tab[aria-pressed="true"] {
+    @apply border-ball text-paper;
+  }
+
+  .data-table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+
+  .data-table caption {
+    @apply pb-3 text-left font-mono text-[9px] font-medium uppercase tracking-[0.18em] text-paper-mute;
+  }
+
+  .data-table thead th {
+    @apply border-b border-rule px-3 py-2.5 font-mono text-[9px] font-medium uppercase tracking-[0.16em] text-paper-mute;
+  }
+
+  .data-table tbody td {
+    @apply border-b border-rule-soft px-3 py-2.5 text-paper-soft;
+  }
+
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .data-table tbody tr:hover {
+    @apply bg-ink-sunken;
+  }
+
+  .num {
+    @apply font-mono tabular-nums;
+  }
+
+  .scroll-x {
+    @apply overflow-x-auto overscroll-x-contain;
+  }
+
+  .link {
+    @apply text-paper underline decoration-rule decoration-1 underline-offset-4 transition-colors hover:decoration-ball;
   }
 }

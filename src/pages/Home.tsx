@@ -1,15 +1,10 @@
 import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
-import {
-  Activity,
-  ArrowRight,
-  BarChart3,
-  ExternalLink,
-  ListChecks,
-  Radio,
-  Trophy,
-  Users,
-} from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { fetchLiveMatches, fetchMatches } from "../api";
+import { getResultText, getScoreString } from "../utils";
+import { FormatBadge } from "../components/MatchFormat";
 
 const INVITE_URL = "https://top.gg/bot/1443165621100740668";
 const SUPPORT_URL = "https://discord.gg/7fXmznW9sB";
@@ -66,27 +61,6 @@ const TEAM_MEMBERS = [
   }
 ];
 
-const FEATURES = [
-  {
-    icon: Radio,
-    title: "Live commentary",
-    description:
-      "Follow every delivery as it happens. Matches unfold in real time inside your Discord channels, with instant score updates.",
-  },
-  {
-    icon: BarChart3,
-    title: "Complete scorecards",
-    description:
-      "Every innings is recorded in detail — batting, bowling, partnerships, and player-of-the-match awards — and available to revisit anytime.",
-  },
-  {
-    icon: Trophy,
-    title: "Global leaderboards",
-    description:
-      "Compete across every server for the most runs, wickets, and MVP awards. Climb the rankings and build a lasting record.",
-  },
-];
-
 const STEPS = [
   {
     command: "create",
@@ -138,11 +112,55 @@ export const hydrateTeamMembers = async () => {
   });
 };
 
+function WireRow({ match }: { match: any; key?: string | number }) {
+  const teamA = match.teamAName || "Team A";
+  const teamB = match.teamBName || "Team B";
+  const taScores: string[] = [];
+  const tbScores: string[] = [];
+
+  (match.innings || []).forEach((inn: any) => {
+    const score = getScoreString(inn);
+    if (inn.battingTeam === teamA) taScores.push(score);
+    else if (inn.battingTeam === teamB) tbScores.push(score);
+  });
+
+  const date = match.timestamp
+    ? new Date(match.timestamp * 1000).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })
+    : null;
+
+  return (
+    <Link
+      to={`/match/${match.id}`}
+      className="group grid gap-2 border-b border-rule-soft py-4 transition-colors hover:bg-ink-raised sm:grid-cols-[110px_minmax(0,1fr)_auto] sm:items-baseline sm:gap-5"
+    >
+      <div className="flex items-center gap-2 sm:block">
+        <FormatBadge match={match} />
+        {date && <span className="label sm:mt-1.5 sm:block">{date}</span>}
+      </div>
+      <div className="min-w-0">
+        <p className="display text-xl leading-tight sm:text-2xl">
+          {teamA}{" "}
+          {taScores.length > 0 && <span className="num text-base text-ball">{taScores.join(" & ")}</span>}
+          <span className="mx-2 font-sans text-[10px] uppercase tracking-[0.2em] text-paper-mute">v</span>
+          {teamB}{" "}
+          {tbScores.length > 0 && <span className="num text-base text-ball">{tbScores.join(" & ")}</span>}
+        </p>
+        <p className="mt-1 text-sm leading-snug text-paper-mute">{getResultText(match)}</p>
+      </div>
+      <span className="label transition-colors group-hover:text-paper">Scorecard →</span>
+    </Link>
+  );
+}
+
 export function Home() {
   const [members, setMembers] = useState(TEAM_MEMBERS);
+  const [wire, setWire] = useState<any[]>([]);
+  const [live, setLive] = useState<any[]>([]);
+  const [wireState, setWireState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
     let active = true;
+
     hydrateTeamMembers()
       .then((data) => {
         if (active) setMembers(data);
@@ -150,6 +168,18 @@ export function Home() {
       .catch(() => {
         // Keep the static team data if the API is unavailable.
       });
+
+    Promise.allSettled([fetchMatches(), fetchLiveMatches()]).then(([recent, liveMatches]) => {
+      if (!active) return;
+      if (recent.status === "fulfilled") {
+        setWire(recent.value.slice(0, 5));
+        setWireState("ready");
+      } else {
+        setWireState("error");
+      }
+      if (liveMatches.status === "fulfilled") setLive(liveMatches.value.slice(0, 3));
+    });
+
     return () => {
       active = false;
     };
@@ -158,12 +188,12 @@ export function Home() {
   return (
     <>
       <Helmet>
-        <title>Ashes · Test & T15 Cricket for Discord</title>
+        <title>Ashes · Test &amp; T15 Cricket for Discord</title>
         <meta
           name="description"
           content="Ashes is a real-time Test and T15 cricket simulator for Discord. Host matches, follow live scorecards, and compete on global leaderboards."
         />
-        <meta property="og:title" content="Ashes · Test & T15 Cricket for Discord" />
+        <meta property="og:title" content="Ashes · Test &amp; T15 Cricket for Discord" />
         <meta
           property="og:description"
           content="Host live Test and T15 cricket matches in your Discord server, track every delivery, and compete on global leaderboards."
@@ -171,276 +201,313 @@ export function Home() {
       </Helmet>
 
       <div className="flex flex-col">
-        {/* Hero */}
-        <section className="relative flex flex-col items-center pb-16 pt-6 text-center md:pb-24 md:pt-12">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[440px] bg-[radial-gradient(55%_100%_at_50%_0%,rgba(99,102,241,0.16),transparent_70%)]"
-          />
+        <section className="border-b border-rule pb-12 pt-4 md:pb-16 md:pt-8">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-end">
+            <div className="min-w-0">
+              <p className="label">A cricket almanac for Discord</p>
+              <h1 className="display mt-4 text-[2.5rem] leading-[0.92] sm:text-6xl md:text-7xl">
+                The long form,
+                <br />
+                <em className="italic text-ball">and the short.</em>
+              </h1>
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-paper-soft">
+                Test cricket&rsquo;s patience and T15&rsquo;s hurry, played out ball by ball in your
+                server. Every innings kept, every result on the record.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-solid">
+                  Add to Discord
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </a>
+                <Link to="/matches" className="btn btn-quiet">
+                  Open the scorebook
+                </Link>
+              </div>
+            </div>
 
-          <span className="inline-flex items-center gap-2 rounded-full border border-ashes-border bg-white/[0.03] px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-ashes-muted">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            </span>
-            Live cricket on Discord
-          </span>
-
-          <h1 className="mt-7 max-w-4xl text-balance font-bebas text-4xl leading-[1.05] tracking-wide text-white sm:text-6xl md:text-7xl">
-            Cricket, <span className="italic text-ashes-red">ball by ball.</span>
-          </h1>
-
-          <p className="mt-6 max-w-2xl text-pretty text-base leading-relaxed text-zinc-400 sm:text-lg">
-            Ashes brings the tension of Test cricket and the pace of T15 to your Discord server —
-            live simulations, complete scorecards, and a global stage for every player.
-          </p>
-
-          <div className="mt-9 flex w-full flex-col gap-3 px-2 sm:w-auto sm:flex-row sm:px-0">
-            <a
-              href={INVITE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex items-center justify-center gap-2 rounded-sm bg-ashes-red px-7 py-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_24px_rgba(99,102,241,0.25)] transition-colors hover:bg-ashes-red-hover"
-            >
-              Add to Discord
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-            </a>
-            <a
-              href={SUPPORT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-sm border border-ashes-border bg-white/[0.03] px-7 py-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:border-ashes-border-light hover:bg-white/[0.06]"
-            >
-              Join the community
-              <ExternalLink className="h-3.5 w-3.5 text-ashes-muted" aria-hidden="true" />
-            </a>
-          </div>
-
-          <dl className="mt-14 grid w-full max-w-3xl grid-cols-1 divide-y divide-ashes-border overflow-hidden rounded-lg border border-ashes-border bg-ashes-card/70 text-left sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            {[
-              { icon: Activity, label: "Simulation", value: "Ball by ball" },
-              { icon: ListChecks, label: "Formats", value: "Test & T15" },
-              { icon: Trophy, label: "Competition", value: "Global rankings" },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-center gap-3 px-5 py-4">
-                <Icon className="h-4 w-4 shrink-0 text-ashes-red" aria-hidden="true" />
-                <div>
-                  <dt className="font-mono text-[9px] uppercase tracking-[0.22em] text-ashes-very-muted">{label}</dt>
-                  <dd className="mt-0.5 font-bebas text-lg tracking-wide text-white">{value}</dd>
+            <aside className="min-w-0 border-t border-rule pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+              <p className="label">How a delivery resolves</p>
+              <div className="mt-4 border-t border-rule">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 border-b border-rule-soft py-3">
+                  <div>
+                    <p className="label">Batter 2 · Bowler 3</p>
+                    <p className="mt-1 text-sm leading-snug text-paper-soft">Numbers differ. The batter is safe.</p>
+                  </div>
+                  <span className="num text-2xl text-paper">2</span>
+                </div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 border-b border-rule-soft py-3">
+                  <div>
+                    <p className="label">Batter 3 · Bowler 3</p>
+                    <p className="mt-1 text-sm leading-snug text-paper-soft">Numbers match. The batter is out.</p>
+                  </div>
+                  <span className="num text-2xl text-ball">W</span>
                 </div>
               </div>
-            ))}
-          </dl>
+              <p className="mt-4 text-xs leading-relaxed text-paper-mute">
+                Valid numbers are 0, 1, 2, 3, 4 and 6. There is no 5.
+              </p>
+            </aside>
+          </div>
         </section>
 
-        {/* Features */}
-        <section aria-labelledby="features-heading" className="border-t border-ashes-border py-14 md:py-20">
-          <div className="mb-8 max-w-2xl">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-ashes-red">What you get</p>
-            <h2 id="features-heading" className="mt-2 font-bebas text-3xl tracking-wide text-white md:text-4xl">
-              Built for the crease
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-ashes-muted">
-              Everything you need to run a competitive cricket league — without leaving Discord.
-            </p>
-          </div>
+        {live.length > 0 && (
+          <section aria-labelledby="live-now-heading" className="border-b border-rule py-6">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-live" aria-hidden="true" />
+              <h2 id="live-now-heading" className="label text-live">
+                Live now
+              </h2>
+            </div>
+            <div className="mt-3 border-y border-rule">
+              {live.map((match) => {
+                const teamA = match.teamAName || "Team A";
+                const teamB = match.teamBName || "Team B";
+                const taScores: string[] = [];
+                const tbScores: string[] = [];
+                (match.innings || []).forEach((inn: any) => {
+                  const score = getScoreString(inn);
+                  if (inn.battingTeam === teamA) taScores.push(score);
+                  else if (inn.battingTeam === teamB) tbScores.push(score);
+                });
+                return (
+                  <Link
+                    key={match.id}
+                    to={`/live/${match.id}`}
+                    className="group flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule-soft py-3 last:border-b-0 hover:bg-ink-raised"
+                  >
+                    <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <FormatBadge match={match} />
+                      <span className="display text-lg leading-none">{teamA}</span>
+                      <span className="num text-sm text-ball">{taScores.join(" & ") || "—"}</span>
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-paper-mute">v</span>
+                      <span className="display text-lg leading-none">{teamB}</span>
+                      <span className="num text-sm text-ball">{tbScores.join(" & ") || "—"}</span>
+                    </span>
+                    <span className="label group-hover:text-paper">
+                      {match.state === "live" ? "Follow →" : "Lobby →"}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
-          <div className="grid gap-4 md:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, title, description }) => (
-              <article
-                key={title}
-                className="group rounded-lg border border-ashes-border bg-ashes-card p-6 transition-colors hover:border-ashes-red/30 hover:bg-ashes-card-light"
-              >
-                <div className="mb-5 inline-flex h-10 w-10 items-center justify-center rounded-sm border border-ashes-border bg-white/[0.03] text-ashes-red transition-colors group-hover:border-ashes-red/30">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <h3 className="font-bebas text-2xl tracking-wide text-white">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ashes-muted">{description}</p>
+        <section aria-labelledby="formats-heading" className="border-b border-rule py-12 md:py-16">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)]">
+            <div className="min-w-0">
+              <p className="label">01 / Formats</p>
+              <h2 id="formats-heading" className="display mt-3 text-3xl sm:text-4xl">
+                Two ways to play.
+              </h2>
+            </div>
+            <div className="grid gap-8 sm:grid-cols-2">
+              <article>
+                <FormatBadge format="test" detail />
+                <p className="mt-3 text-sm leading-relaxed text-paper-soft">
+                  Four innings. Declarations, the follow-on and draws are all in play. The host sets
+                  the overs before the toss.
+                </p>
               </article>
+              <article>
+                <FormatBadge format="t15" detail />
+                <p className="mt-3 text-sm leading-relaxed text-paper-soft">
+                  Two innings of 15 overs. Boundary limits change by phase: two per batter in the
+                  powerplay, one in the middle, two in the death.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="wire-heading" className="border-b border-rule py-12 md:py-16">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="label">02 / The wire</p>
+              <h2 id="wire-heading" className="display mt-3 text-3xl sm:text-4xl">
+                Latest results.
+              </h2>
+            </div>
+            <Link to="/matches" className="label transition-colors hover:text-paper">
+              All matches →
+            </Link>
+          </div>
+
+          <div className="mt-6 border-t border-rule">
+            {wireState === "loading" && <p className="label py-6">Reading the scorebook…</p>}
+            {wireState === "error" && (
+              <p className="py-6 text-sm text-paper-mute">
+                The wire is unavailable right now.{" "}
+                <Link to="/matches" className="link">
+                  Try the matches page
+                </Link>
+                .
+              </p>
+            )}
+            {wireState === "ready" && wire.length === 0 && (
+              <p className="py-6 text-sm text-paper-mute">No completed matches on the wire yet.</p>
+            )}
+            {wire.map((match) => (
+              <WireRow key={match.id} match={match} />
             ))}
           </div>
         </section>
 
-        {/* How it works */}
-        <section aria-labelledby="how-heading" className="border-t border-ashes-border py-14 md:py-20">
-          <div className="mb-8 max-w-2xl">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-ashes-red">Getting started</p>
-            <h2 id="how-heading" className="mt-2 font-bebas text-3xl tracking-wide text-white md:text-4xl">
-              From lobby to first ball
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-ashes-muted">
-              Four players are all you need. Run these commands in order and the match begins.
-            </p>
+        <section aria-labelledby="start-heading" className="border-b border-rule py-12 md:py-16">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)]">
+            <div className="min-w-0">
+              <p className="label">03 / First over</p>
+              <h2 id="start-heading" className="display mt-3 text-3xl sm:text-4xl">
+                Four commands to the toss.
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-paper-mute">
+                Four players are enough. Run these in order and the match begins.
+              </p>
+            </div>
+            <ol className="border-t border-rule">
+              {STEPS.map((step, index) => (
+                <li
+                  key={step.command}
+                  className="grid gap-2 border-b border-rule-soft py-4 sm:grid-cols-[40px_minmax(0,1fr)_auto] sm:items-baseline sm:gap-4"
+                >
+                  <span className="num text-sm text-paper-mute">{String(index + 1).padStart(2, "0")}</span>
+                  <div className="min-w-0">
+                    <h3 className="display text-xl">{step.title}</h3>
+                    <p className="mt-1 text-sm leading-snug text-paper-mute">{step.description}</p>
+                  </div>
+                  <code className="w-fit border border-ball/30 bg-ball/10 px-2 py-1 font-mono text-[11px] text-ball">
+                    {step.command}
+                  </code>
+                </li>
+              ))}
+            </ol>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((step, index) => (
-              <div key={step.command} className="relative rounded-lg border border-ashes-border bg-ashes-card p-5">
-                <span className="font-mono text-[10px] font-semibold tracking-[0.2em] text-ashes-very-muted">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <h3 className="mt-3 font-bebas text-xl tracking-wide text-white">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ashes-muted">{step.description}</p>
-                <code className="mt-4 inline-block rounded-sm border border-ashes-red/20 bg-ashes-red/10 px-2 py-1 font-mono text-[11px] font-medium text-ashes-red">
-                  {step.command}
-                </code>
-              </div>
-            ))}
-          </div>
-
-          <p className="mt-6 text-sm leading-relaxed text-ashes-muted">
+          <p className="mt-6 text-sm leading-relaxed text-paper-mute">
             Can&rsquo;t find enough players? Join the{" "}
-            <a
-              href={SUPPORT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-white underline decoration-ashes-red/50 decoration-2 underline-offset-4 transition-colors hover:text-ashes-red"
-            >
+            <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer" className="link">
               official support server
             </a>{" "}
-            and ping the <span className="font-mono text-xs text-zinc-300">regular players</span> role.
+            and ping the <span className="font-mono text-xs text-paper-soft">regular players</span> role.
           </p>
         </section>
 
-        {/* Rules */}
-        <section aria-labelledby="rules-heading" className="border-t border-ashes-border py-14 md:py-20">
-          <div className="mb-8 max-w-2xl">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-ashes-red">Rules of the game</p>
-            <h2 id="rules-heading" className="mt-2 font-bebas text-3xl tracking-wide text-white md:text-4xl">
-              Simple to learn, hard to master
+        <section aria-labelledby="rules-heading" className="border-b border-rule py-12 md:py-16">
+          <div className="min-w-0">
+            <p className="label">04 / Rules</p>
+            <h2 id="rules-heading" className="display mt-3 text-3xl sm:text-4xl">
+              The game in two columns.
             </h2>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <article className="rounded-lg border border-ashes-border bg-ashes-card p-6 md:p-8">
-              <h3 className="font-bebas text-2xl tracking-wide text-white">The basics</h3>
-              <p className="mt-3 text-sm leading-relaxed text-ashes-muted">
+          <div className="mt-6 grid gap-10 lg:grid-cols-2">
+            <article>
+              <h3 className="display text-2xl">The basics</h3>
+              <p className="mt-3 text-sm leading-relaxed text-paper-soft">
                 The bot asks both the batter and the bowler for a number. Valid numbers are{" "}
-                <span className="font-mono text-zinc-300">0, 1, 2, 3, 4</span> and{" "}
-                <span className="font-mono text-zinc-300">6</span>. If both choose the same number, the
+                <span className="font-mono text-paper">0, 1, 2, 3, 4</span> and{" "}
+                <span className="font-mono text-paper">6</span>. If both choose the same number, the
                 batter is out. Otherwise the batter is safe and scores the number they chose.
               </p>
 
-              <div className="mt-6 space-y-3">
-                <div className="rounded-sm border border-ashes-border bg-white/[0.02] p-4">
-                  <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-ashes-very-muted">Example · Safe</p>
-                  <p className="mt-2 text-sm text-zinc-300">
-                    Batter chooses <span className="font-mono text-white">2</span>, bowler chooses{" "}
-                    <span className="font-mono text-white">3</span> — batter scores{" "}
-                    <span className="font-medium text-white">2 runs</span>.
+              <div className="mt-5 border-t border-rule">
+                <div className="border-b border-rule-soft py-3">
+                  <p className="label">Example · Safe</p>
+                  <p className="mt-1 text-sm text-paper-soft">
+                    Batter chooses <span className="font-mono text-paper">2</span>, bowler chooses{" "}
+                    <span className="font-mono text-paper">3</span> — the batter scores two runs.
                   </p>
                 </div>
-                <div className="rounded-sm border border-ashes-border bg-white/[0.02] p-4">
-                  <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-ashes-very-muted">Example · Out</p>
-                  <p className="mt-2 text-sm text-zinc-300">
-                    Batter chooses <span className="font-mono text-white">3</span>, bowler chooses{" "}
-                    <span className="font-mono text-white">3</span> — the batter is{" "}
-                    <span className="font-medium text-white">out</span>.
+                <div className="border-b border-rule-soft py-3">
+                  <p className="label">Example · Out</p>
+                  <p className="mt-1 text-sm text-paper-soft">
+                    Batter chooses <span className="font-mono text-paper">3</span>, bowler chooses{" "}
+                    <span className="font-mono text-paper">3</span> — the batter is out.
                   </p>
                 </div>
               </div>
             </article>
 
-            <article className="rounded-lg border border-ashes-border bg-ashes-card p-6 md:p-8">
-              <h3 className="font-bebas text-2xl tracking-wide text-white">Advanced rules</h3>
-              <p className="mt-3 text-sm leading-relaxed text-ashes-muted">
-                Ashes adds a small set of rules on top of the basics to keep matches competitive.
+            <article>
+              <h3 className="display text-2xl">Advanced rules</h3>
+              <p className="mt-3 text-sm leading-relaxed text-paper-soft">
+                A small set of rules sits on top of the basics to keep matches competitive.
               </p>
-              <ul className="mt-5 space-y-3">
+              <ul className="mt-4 border-t border-rule">
                 {ADVANCED_RULES.map((rule) => (
-                  <li key={rule} className="flex gap-3 text-sm leading-relaxed text-ashes-muted">
-                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ashes-red" aria-hidden="true" />
-                    <span>{rule}</span>
+                  <li key={rule} className="border-b border-rule-soft py-2.5 text-sm leading-relaxed text-paper-soft">
+                    {rule}
                   </li>
                 ))}
               </ul>
-              <div className="mt-5 rounded-sm border border-sky-400/20 bg-sky-400/[0.04] p-4">
-                <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-sky-300">T15 format</p>
-                <p className="mt-2 text-sm leading-relaxed text-ashes-muted">
-                  Two innings of 15 overs. Boundary limits change by phase: two per batter in the powerplay,
-                  one in the middle, and two in the death overs.
+              <div className="mt-5 border-l-2 border-t15 pl-4">
+                <p className="label text-t15">T15 format</p>
+                <p className="mt-2 text-sm leading-relaxed text-paper-soft">
+                  Two innings of 15 overs. Boundary limits change by phase: two per batter in the
+                  powerplay, one in the middle, and two in the death overs.
                 </p>
               </div>
             </article>
           </div>
         </section>
 
-        {/* Team */}
-        <section aria-labelledby="team-heading" className="border-t border-ashes-border py-14 md:py-20">
-          <div className="mb-8 max-w-2xl">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-ashes-red">Behind the scenes</p>
-            <h2 id="team-heading" className="mt-2 font-bebas text-3xl tracking-wide text-white md:text-4xl">
-              The team behind Ashes
+        <section aria-labelledby="team-heading" className="border-b border-rule py-12 md:py-16">
+          <div className="min-w-0">
+            <p className="label">05 / The team</p>
+            <h2 id="team-heading" className="display mt-3 text-3xl sm:text-4xl">
+              Behind the scorebook.
             </h2>
-            <p className="mt-3 text-sm leading-relaxed text-ashes-muted">
-              Development, design, and moderation — the people keeping the game running.
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-paper-mute">
+              Development, design and moderation — the people keeping the game running.
             </p>
           </div>
 
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-6 grid gap-x-8 border-t border-rule sm:grid-cols-2 lg:grid-cols-3">
             {members.map((member) => (
-              <li
-                key={member.userId}
-                className="flex items-center gap-4 rounded-lg border border-ashes-border bg-ashes-card p-4 transition-colors hover:border-ashes-red/30"
-              >
+              <li key={member.userId} className="flex items-center gap-3 border-b border-rule-soft py-3">
                 {member.avatarUrl ? (
                   <img
                     src={member.avatarUrl}
                     alt=""
-                    width={48}
-                    height={48}
+                    width={40}
+                    height={40}
                     loading="lazy"
-                    className="h-12 w-12 shrink-0 rounded-full border border-ashes-border object-cover"
+                    className="h-10 w-10 shrink-0 border border-rule object-cover"
                   />
                 ) : (
                   <div
                     aria-hidden="true"
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ashes-border bg-ashes-card-light font-bebas text-xl text-white"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center border border-rule bg-ink-raised font-display text-lg text-paper"
                   >
                     {member.name.charAt(0)}
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold leading-tight text-white">{member.name}</p>
-                  <p className="mt-0.5 truncate font-mono text-[10px] leading-tight text-ashes-very-muted">{member.username}</p>
-                  <p className="mt-1.5 truncate font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-ashes-red">
-                    {member.role}
-                  </p>
+                  <p className="truncate text-sm font-semibold leading-tight text-paper">{member.name}</p>
+                  <p className="mt-0.5 truncate font-mono text-[10px] leading-tight text-paper-mute">{member.username}</p>
+                  <p className="label mt-1 truncate text-[9px] tracking-[0.14em]">{member.role}</p>
                 </div>
               </li>
             ))}
           </ul>
         </section>
 
-        {/* Final CTA */}
-        <section className="relative overflow-hidden rounded-lg border border-ashes-border bg-ashes-card px-6 py-12 text-center md:px-12 md:py-16">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_120%_at_50%_0%,rgba(99,102,241,0.16),transparent_70%)]"
-          />
-          <div className="relative">
-            <h2 className="font-bebas text-3xl tracking-wide text-white md:text-4xl">Ready to take the field?</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ashes-muted">
-              Add Ashes to your server, invite three friends, and play your first Test match in minutes.
-            </p>
-            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <a
-                href={INVITE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group inline-flex items-center justify-center gap-2 rounded-sm bg-ashes-red px-7 py-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-ashes-red-hover"
-              >
+        <section className="py-12 md:py-16">
+          <div className="grid gap-6 border-y border-rule py-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <div className="min-w-0">
+              <h2 className="display text-3xl sm:text-4xl">Ready for the first ball?</h2>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-paper-mute">
+                Add Ashes, invite three friends, and start a match in your server.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-solid">
                 Add to Discord
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
-              <a
-                href={SUPPORT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-sm border border-ashes-border bg-white/[0.03] px-7 py-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:border-ashes-border-light hover:bg-white/[0.06]"
-              >
-                <Users className="h-4 w-4 text-ashes-muted" aria-hidden="true" />
+              <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer" className="btn btn-quiet">
                 Support server
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
               </a>
             </div>
           </div>
