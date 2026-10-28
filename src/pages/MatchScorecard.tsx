@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
+import { Trophy } from "lucide-react";
 import { fetchMatch, fetchScorecard } from "../api";
 import { getResultText, getScoreString } from "../utils";
 
@@ -160,7 +161,10 @@ export function MatchScorecard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
         <div className="bg-ashes-card border border-ashes-border border-t-2 border-t-[#10b981] p-6 h-full shadow-lg rounded-sm hover:-translate-y-1 transition-transform">
           <div className="font-mono text-[10px] font-bold text-ashes-muted uppercase tracking-[0.3em] mb-3">Result</div>
-          <div className="font-sans text-lg font-bold text-white">🏆 {getResultText(match)}</div>
+          <div className="font-sans text-lg font-bold text-white flex items-center gap-2">
+            <Trophy className="h-4 w-4 shrink-0 text-[#10b981]" aria-hidden="true" />
+            {getResultText(match)}
+          </div>
         </div>
         
         <div className="bg-ashes-card border border-ashes-border border-t-2 border-t-ashes-red p-6 h-full shadow-lg rounded-sm hover:-translate-y-1 transition-transform">

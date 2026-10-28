@@ -188,11 +188,11 @@ export function PlayerProfile() {
                     {new Date(perf.timestamp * 1000).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </div>
                   <div className="flex items-start gap-2 text-white font-mono text-sm">
-                    <span className="opacity-50">🏏</span>
+                    <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-ashes-very-muted pt-0.5">BAT</span>
                     <span className="font-medium tracking-wide">{perf.bat}</span>
                   </div>
                   <div className="flex items-start gap-2 text-ashes-muted font-mono text-sm group-hover:text-zinc-300 transition-colors">
-                    <span className="opacity-50">🥎</span>
+                    <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-ashes-very-muted pt-0.5">BOWL</span>
                     <span className="font-medium tracking-wide">{perf.bowl}</span>
                   </div>
                 </Link>

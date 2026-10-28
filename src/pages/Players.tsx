@@ -1,14 +1,17 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import { Search } from "lucide-react";
 import { searchPlayers } from "../api";
+import { PageHeader } from "../components/PageHeader";
 
 export function Players() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
     setLoading(true);
@@ -29,22 +32,29 @@ export function Players() {
         <meta name="description" content="Search for player profiles and view their detailed career statistics." />
       </Helmet>
       
-      <div className="max-w-2xl mx-auto mt-8">
-        <h2 className="font-bebas text-4xl text-white tracking-wide mb-6 text-center">Player Search</h2>
-        
-        <form onSubmit={handleSearch} className="mb-8">
+      <div className="max-w-2xl mx-auto">
+        <PageHeader
+          eyebrow="Player directory"
+          title="Find a player"
+          description="Search by Discord username or ID to open a full career profile."
+        />
+
+        <form onSubmit={handleSearch} className="mb-8" role="search">
           <div className="flex gap-2">
-            <input 
-              type="text" 
-              placeholder="Search by Discord Name or ID..." 
+            <label htmlFor="player-search" className="sr-only">Search players</label>
+            <input
+              id="player-search"
+              type="search"
+              placeholder="Search by Discord name or ID..."
               className="flex-1 bg-ashes-card border border-ashes-border text-white px-4 py-3 rounded-sm outline-none focus:border-ashes-red transition-colors text-sm font-sans"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <button 
-              type="submit" 
-              className="bg-ashes-red hover:bg-red-700 text-white font-bebas tracking-widest px-6 py-3 rounded-sm transition-colors text-xl"
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 bg-ashes-red hover:bg-ashes-red-hover text-white font-mono text-[10px] font-bold uppercase tracking-[0.18em] px-6 py-3 rounded-sm transition-colors"
             >
+              <Search className="h-3.5 w-3.5" aria-hidden="true" />
               Search
             </button>
           </div>

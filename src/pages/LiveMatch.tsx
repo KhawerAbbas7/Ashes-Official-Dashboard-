@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
+import { ClipboardList, Radio, RefreshCw } from "lucide-react";
 import { fetchLiveMatch } from "../api";
 import { getScoreString } from "../utils";
 
@@ -128,7 +129,7 @@ export function LiveMatch() {
   return (
     <>
       <Helmet>
-        <title>🔴 {teamA} vs {teamB} · Live</title>
+        <title>Live · {teamA} vs {teamB} · Ashes</title>
         <meta name="description" content={`Live coverage for ${teamA} vs ${teamB}.`} />
       </Helmet>
 
@@ -136,8 +137,9 @@ export function LiveMatch() {
         <Link to="/matches" className="text-ashes-muted hover:text-white font-mono text-[10px] uppercase tracking-[0.2em] transition-colors border-b border-transparent hover:border-ashes-red font-bold">
           ← Live Matches
         </Link>
-        <button onClick={loadData} className="font-mono text-[10px] text-zinc-400 border border-ashes-border bg-ashes-card px-4 py-2 hover:text-white hover:border-ashes-red/50 transition-colors uppercase tracking-[0.2em] rounded-sm">
-          ⟳ Refresh
+        <button onClick={loadData} className="inline-flex items-center gap-2 font-mono text-[10px] text-zinc-400 border border-ashes-border bg-ashes-card px-4 py-2 hover:text-white hover:border-ashes-red/50 transition-colors uppercase tracking-[0.2em] rounded-sm">
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+          Refresh
         </button>
       </div>
 
@@ -167,23 +169,27 @@ export function LiveMatch() {
       <div className="flex w-full mt-6 md:mt-8 border-b border-white/5">
         <button
           onClick={() => setActiveRootTab("live")}
-          className={`flex-1 md:flex-none font-mono text-[10px] uppercase tracking-[0.2em] transition-colors py-3 px-4 ${
+          aria-pressed={activeRootTab === "live"}
+          className={`inline-flex flex-1 items-center justify-center gap-2 md:flex-none font-mono text-[10px] uppercase tracking-[0.2em] transition-colors py-3 px-4 ${
             activeRootTab === "live"
               ? "text-ashes-red font-bold border-b-2 border-ashes-red bg-white/5"
               : "text-ashes-muted hover:text-white hover:bg-white/5"
           }`}
         >
-          🔴 Live
+          <Radio className="h-3.5 w-3.5" aria-hidden="true" />
+          Live
         </button>
         <button
           onClick={() => setActiveRootTab("scorecard")}
-          className={`flex-1 md:flex-none font-mono text-[10px] uppercase tracking-[0.2em] transition-colors py-3 px-4 ${
+          aria-pressed={activeRootTab === "scorecard"}
+          className={`inline-flex flex-1 items-center justify-center gap-2 md:flex-none font-mono text-[10px] uppercase tracking-[0.2em] transition-colors py-3 px-4 ${
             activeRootTab === "scorecard"
               ? "text-ashes-red font-bold border-b-2 border-ashes-red bg-white/5"
               : "text-ashes-muted hover:text-white hover:bg-white/5"
           }`}
         >
-          📋 Scorecard
+          <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" />
+          Scorecard
         </button>
       </div>
 

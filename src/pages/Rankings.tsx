@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { ChevronDown } from "lucide-react";
 import { fetchRankings } from "../api";
+import { PageHeader } from "../components/PageHeader";
 const TYPES: Record<string, string> = {
   "Batting": "batting",
   "Bowling": "bowling",
@@ -40,6 +41,11 @@ export function Rankings() {
         <title>Rankings · Ashes</title>
         <meta name="description" content="View global player rankings across all servers." />
       </Helmet>
+      <PageHeader
+        eyebrow="Player ratings"
+        title="Rankings"
+        description="Official batting, bowling, and all-rounder ratings, updated from match results."
+      />
       <div className="mb-6 w-full max-w-xs relative" ref={dropdownRef}>
         <button onClick={() => setIsOpen(!isOpen)} className="flex w-full items-center justify-between bg-ashes-card border border-ashes-border text-white font-sans text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red hover:border-ashes-red transition-colors cursor-pointer">
           <span>{selectedType}</span>

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { ChevronDown } from "lucide-react";
 import { fetchLeaderboard } from "../api";
+import { PageHeader } from "../components/PageHeader";
 
 const CATEGORIES: Record<string, string> = {
   "Most Runs": "most_runs",
@@ -30,6 +31,12 @@ const CATEGORIES: Record<string, string> = {
   "Highest Match Aggregates": "highest_match_aggregate",
   "Lowest Deviation As A Bowler": "lowest_deviation_as_a_bowler",
 };
+
+const formatColumn = (key: string) =>
+  key
+    .replace(/_/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 
 export function Leaderboard() {
   const [selectedCategory, setSelectedCategory] = useState("Most Runs");
@@ -68,6 +75,12 @@ export function Leaderboard() {
         <meta name="description" content="View global cricket leaderboards across all Discord servers." />
       </Helmet>
       
+      <PageHeader
+        eyebrow="Statistics"
+        title="Global Leaderboard"
+        description="The best individual performances across every Ashes server."
+      />
+
       <div className="mb-6 w-full max-w-xs relative" ref={dropdownRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -126,7 +139,7 @@ export function Leaderboard() {
                     .filter((k) => !["rank", "player", "player2", "playerAvatar", "player2Avatar", "matchId"].includes(k))
                     .map((col) => (
                       <th key={col} className="border-b border-ashes-border p-4 text-ashes-very-muted font-mono text-[10px] uppercase font-bold tracking-[0.2em] text-right">
-                        {col}
+                        {formatColumn(col)}
                       </th>
                   ))}
                 </tr>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import { RefreshCw, Search, SlidersHorizontal, X } from "lucide-react";
 import { fetchLiveMatches, fetchMatches } from "../api";
 import { getResultText, getScoreString } from "../utils";
+import { PageHeader } from "../components/PageHeader";
 
 export function Matches() {
   const [activeTab, setActiveTab] = useState<"live" | "recent">("recent");
@@ -60,9 +62,16 @@ export function Matches() {
         <meta name="description" content="View recent and live Ashes cricket matches." />
       </Helmet>
 
-      <div className="flex w-full mb-6 border-b border-white/5">
+      <PageHeader
+        eyebrow="Fixtures & results"
+        title="Matches"
+        description="Browse completed scorecards or follow live matches and open lobbies across Discord."
+      />
+
+      <div className="flex w-full mb-6 border-b border-ashes-border">
         <button
           onClick={() => setActiveTab("recent")}
+          aria-pressed={activeTab === "recent"}
           className={`flex-1 md:flex-none font-mono text-[10px] uppercase tracking-[0.2em] px-4 md:px-6 py-4 transition-colors text-center ${
             activeTab === "recent"
               ? "text-ashes-red border-b-2 border-ashes-red font-bold"
@@ -73,6 +82,7 @@ export function Matches() {
         </button>
         <button
           onClick={() => setActiveTab("live")}
+          aria-pressed={activeTab === "live"}
           className={`flex-1 md:flex-none font-mono text-[10px] uppercase tracking-[0.2em] px-4 md:px-6 py-4 transition-colors text-center ${
             activeTab === "live"
               ? "text-ashes-red border-b-2 border-ashes-red font-bold"
@@ -88,6 +98,7 @@ export function Matches() {
           <div className="flex flex-col sm:flex-row mb-4 gap-2">
             <input
               type="text"
+              aria-label="Search matches"
               placeholder="Search matches..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -97,14 +108,17 @@ export function Matches() {
             <div className="flex gap-2 w-full sm:w-auto">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex-1 sm:flex-none bg-ashes-card border border-ashes-border text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-3 sm:py-2.5 rounded-sm hover:border-ashes-red hover:text-white transition-colors whitespace-nowrap"
+                aria-expanded={showFilters}
+                className="inline-flex flex-1 items-center justify-center gap-2 sm:flex-none bg-ashes-card border border-ashes-border text-ashes-muted font-mono text-[10px] uppercase tracking-[0.2em] px-5 py-3 sm:py-2.5 rounded-sm hover:border-ashes-red hover:text-white transition-colors whitespace-nowrap"
               >
-                {showFilters ? "✕ Hide" : "⚙ Filters"}
+                {showFilters ? <X className="h-3.5 w-3.5" aria-hidden="true" /> : <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />}
+                {showFilters ? "Hide" : "Filters"}
               </button>
               <button
                 onClick={loadRecentMatches}
-                className="flex-1 sm:flex-none bg-ashes-red text-white font-mono text-[10px] uppercase tracking-[0.2em] px-6 py-3 sm:py-2.5 rounded-sm hover:bg-ashes-red-hover transition-colors whitespace-nowrap font-bold"
+                className="inline-flex flex-1 items-center justify-center gap-2 sm:flex-none bg-ashes-red text-white font-mono text-[10px] uppercase tracking-[0.2em] px-6 py-3 sm:py-2.5 rounded-sm hover:bg-ashes-red-hover transition-colors whitespace-nowrap font-bold"
               >
+                <Search className="h-3.5 w-3.5" aria-hidden="true" />
                 Search
               </button>
             </div>
@@ -112,9 +126,9 @@ export function Matches() {
 
           {showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <input type="text" placeholder="Server ID" value={guildId} onChange={(e) => setGuildId(e.target.value)} className="bg-ashes-card border border-ashes-border text-white text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red" />
-              <input type="text" placeholder="Channel ID" value={channelId} onChange={(e) => setChannelId(e.target.value)} className="bg-ashes-card border border-ashes-border text-white text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red" />
-              <input type="text" placeholder="Player ID" value={playerId} onChange={(e) => setPlayerId(e.target.value)} className="bg-ashes-card border border-ashes-border text-white text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red" />
+              <input type="text" aria-label="Server ID" placeholder="Server ID" value={guildId} onChange={(e) => setGuildId(e.target.value)} className="bg-ashes-card border border-ashes-border text-white text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red" />
+              <input type="text" aria-label="Channel ID" placeholder="Channel ID" value={channelId} onChange={(e) => setChannelId(e.target.value)} className="bg-ashes-card border border-ashes-border text-white text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red" />
+              <input type="text" aria-label="Player ID" placeholder="Player ID" value={playerId} onChange={(e) => setPlayerId(e.target.value)} className="bg-ashes-card border border-ashes-border text-white text-sm rounded-sm px-4 py-2.5 outline-none focus:border-ashes-red" />
             </div>
           )}
 
@@ -166,8 +180,9 @@ export function Matches() {
       {activeTab === "live" && (
         <div>
           <div className="flex justify-start mb-6">
-            <button onClick={loadLiveMatches} className="font-mono text-[10px] text-zinc-400 border border-ashes-border bg-ashes-card px-4 py-2 hover:text-white hover:border-ashes-red/50 transition-colors uppercase tracking-[0.2em] rounded-sm">
-              ⟳ Refresh
+            <button onClick={loadLiveMatches} className="inline-flex items-center gap-2 font-mono text-[10px] text-zinc-400 border border-ashes-border bg-ashes-card px-4 py-2 hover:text-white hover:border-ashes-red/50 transition-colors uppercase tracking-[0.2em] rounded-sm">
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+              Refresh
             </button>
           </div>
           {loadingLive ? (
