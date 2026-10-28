@@ -5,6 +5,7 @@ import { fetchMatch, fetchScorecard } from "../api";
 import { getResultText, getScoreString } from "../utils";
 import { FormatBadge } from "../components/MatchFormat";
 import { InningsTables } from "../components/InningsTables";
+import { DeliveryFeed } from "../components/DeliveryFeed";
 
 export function MatchScorecard() {
   const { id } = useParams();
@@ -13,9 +14,12 @@ export function MatchScorecard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [activeTab, setActiveTab] = useState<number>(0);
+  const [activeView, setActiveView] = useState<"scorecard" | "balls">("scorecard");
 
   useEffect(() => {
     if (!id) return;
+    setActiveTab(0);
+    setActiveView("scorecard");
     setLoading(true);
     Promise.all([fetchMatch(id), fetchScorecard(id)])
       .then(([matchData, scorecardData]) => {
@@ -164,8 +168,35 @@ export function MatchScorecard() {
               );
             })}
           </div>
+          <div className="mt-4 flex gap-6 border-b border-rule">
+            <button
+              type="button"
+              onClick={() => setActiveView("scorecard")}
+              aria-pressed={activeView === "scorecard"}
+              className="tab"
+            >
+              Scorecard
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView("balls")}
+              aria-pressed={activeView === "balls"}
+              className="tab"
+            >
+              Ball by ball
+            </button>
+          </div>
           <div className="pt-6">
-            <InningsTables inning={inningsData[activeTab]} />
+            {activeView === "scorecard" ? (
+              <InningsTables inning={inningsData[activeTab]} />
+            ) : id ? (
+              <DeliveryFeed
+                key={`${id}-${inningsData[activeTab]?.inningNo ?? activeTab}`}
+                matchId={id}
+                inningNo={inningsData[activeTab]?.inningNo ?? activeTab + 1}
+                format={String(scorecard?.format || match.format || "test").toLowerCase()}
+              />
+            ) : null}
           </div>
         </div>
       )}

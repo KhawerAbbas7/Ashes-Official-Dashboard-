@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
 import { ClipboardList, Radio, RefreshCw } from "lucide-react";
@@ -6,29 +6,7 @@ import { fetchLiveMatch } from "../api";
 import { getScoreString } from "../utils";
 import { FormatBadge } from "../components/MatchFormat";
 import { InningsTables } from "../components/InningsTables";
-
-function StateTag({
-  tone = "quiet",
-  children,
-}: {
-  tone?: "quiet" | "alert" | "accent";
-  children: ReactNode;
-}) {
-  const toneClass =
-    tone === "alert"
-      ? "border-ball/50 text-ball"
-      : tone === "accent"
-        ? "border-test/50 text-test"
-        : "border-rule text-paper-mute";
-
-  return (
-    <span
-      className={`inline-flex items-center border px-1.5 py-1 font-mono text-[9px] font-medium uppercase leading-none tracking-[0.14em] ${toneClass}`}
-    >
-      {children}
-    </span>
-  );
-}
+import { StateTag } from "../components/StateTag";
 
 function commentaryTone(text: string) {
   const lower = text.toLowerCase();

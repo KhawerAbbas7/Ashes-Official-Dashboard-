@@ -37,6 +37,23 @@ export const fetchScorecard = async (matchId: string) => {
   return res.json();
 };
 
+export const fetchMatchDeliveries = async (
+  matchId: string,
+  inningNo: number,
+  page: number = 1,
+  filter: string = "all",
+  limit: number = 20
+) => {
+  const url = new URL(`${BASE}/matches/${matchId}/deliveries`, window.location.origin);
+  url.searchParams.append("inningNo", String(inningNo));
+  url.searchParams.append("page", String(page));
+  url.searchParams.append("limit", String(limit));
+  url.searchParams.append("filter", filter);
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error("Failed to fetch deliveries");
+  return res.json();
+};
+
 export const fetchMatch = async (matchId: string) => {
   const res = await fetch(`${BASE}/matches/${matchId}`);
   if (!res.ok) throw new Error("Failed to fetch match");
