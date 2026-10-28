@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { fetchPlayerStats } from "../api";
+import { FormatBadge } from "../components/MatchFormat";
+import type { StatFormat } from "../utils";
+
+const FORMAT_TABS: { value: StatFormat; label: string }[] = [
+  { value: "all", label: "All formats" },
+  { value: "test", label: "Test" },
+  { value: "t15", label: "T15" },
+];
 
 const BAT_STATS = (batting: any) => [
   ["Mat", batting.matches],
@@ -45,19 +53,31 @@ export function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
   const [recentCount, setRecentCount] = useState(5);
+  const [format, setFormat] = useState<StatFormat>("all");
 
   useEffect(() => {
     if (!id) return;
-    if (!data) setLoading(true);
-    fetchPlayerStats(id, recentCount)
+    setLoading(true);
+    setStatsError(false);
+    fetchPlayerStats(id, recentCount, format)
       .then(setData)
-      .catch(console.error)
+      .catch(() => setStatsError(true))
       .finally(() => setLoading(false));
-  }, [id, recentCount]);
+  }, [id, recentCount, format]);
 
   if (loading && !data) {
     return <p className="label py-16 text-center">Loading profile…</p>;
+  }
+
+  if (!data && statsError) {
+    return (
+      <div className="border-b border-rule py-16 text-center">
+        <p className="label text-ball">Profile unavailable</p>
+        <p className="mt-2 text-sm text-paper-mute">The stats service did not respond. Try again shortly.</p>
+      </div>
+    );
   }
 
   if (!data || !data.player) {
@@ -67,6 +87,18 @@ export function PlayerProfile() {
   const { player, batting, bowling, general, recentPerformances, rankings } = data;
   const batStats = BAT_STATS(batting);
   const bowlStats = BOWL_STATS(bowling);
+
+  const responseFormat = String(data.format ?? "").toLowerCase();
+  const activeFormat: StatFormat =
+    responseFormat === "test" || responseFormat === "t15" ? responseFormat : "all";
+  const scopeLabel =
+    activeFormat === "all" ? "all formats" : activeFormat === "test" ? "Test" : "T15";
+  const scopeCell =
+    activeFormat === "all" ? (
+      <span className="text-sm font-medium text-paper">All formats</span>
+    ) : (
+      <FormatBadge format={activeFormat} />
+    );
 
   return (
     <>
@@ -90,31 +122,55 @@ export function PlayerProfile() {
           <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-3">
             {rankings?.batting?.rank && (
               <div>
-                <dt className="label">Batting rank</dt>
+                <dt className="label">Test batting rank</dt>
                 <dd className="num mt-1 text-xl leading-none text-paper">#{rankings.batting.rank}</dd>
               </div>
             )}
             {rankings?.bowling?.rank && (
               <div>
-                <dt className="label">Bowling rank</dt>
+                <dt className="label">Test bowling rank</dt>
                 <dd className="num mt-1 text-xl leading-none text-paper">#{rankings.bowling.rank}</dd>
               </div>
             )}
             {rankings?.allrounder?.rank && (
               <div>
-                <dt className="label">All-rounder rank</dt>
+                <dt className="label">Test all-rounder rank</dt>
                 <dd className="num mt-1 text-xl leading-none text-test">#{rankings.allrounder.rank}</dd>
               </div>
             )}
             {general.mvps > 0 && (
               <div>
-                <dt className="label">MVP awards</dt>
+                <dt className="label">
+                  {activeFormat === "all" ? "MVP awards" : `${scopeLabel} MVP awards`}
+                </dt>
                 <dd className="num mt-1 text-xl leading-none text-test">{general.mvps}</dd>
               </div>
             )}
           </dl>
         </div>
       </div>
+
+      <div className="scroll-x mt-8 flex items-center gap-6 border-b border-rule">
+        {FORMAT_TABS.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => setFormat(tab.value)}
+            aria-pressed={format === tab.value}
+            className="tab"
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <p className="label mt-2">Updating…</p>}
+
+      {statsError && (
+        <p className="mt-3 text-sm text-ball">
+          Could not refresh these figures. Showing the last response.
+        </p>
+      )}
 
       <div className="mt-10 space-y-12">
         <section aria-labelledby="batting-heading">
@@ -124,7 +180,7 @@ export function PlayerProfile() {
           </div>
           <div className="scroll-x mt-4 border-y border-rule">
             <table className="data-table min-w-[980px]">
-              <caption className="sr-only">Career batting and fielding figures</caption>
+              <caption className="sr-only">Career batting and fielding figures, {scopeLabel}</caption>
               <thead>
                 <tr>
                   <th scope="col" className="text-left">Scope</th>
@@ -137,7 +193,7 @@ export function PlayerProfile() {
               </thead>
               <tbody>
                 <tr>
-                  <td className="whitespace-nowrap text-sm font-medium text-paper">All formats</td>
+                  <td className="whitespace-nowrap">{scopeCell}</td>
                   {batStats.map(([label, value]) => (
                     <td key={String(label)} className="num whitespace-nowrap text-right text-sm">
                       {value}
@@ -156,7 +212,7 @@ export function PlayerProfile() {
           </div>
           <div className="scroll-x mt-4 border-y border-rule">
             <table className="data-table min-w-[980px]">
-              <caption className="sr-only">Career bowling figures</caption>
+              <caption className="sr-only">Career bowling figures, {scopeLabel}</caption>
               <thead>
                 <tr>
                   <th scope="col" className="text-left">Scope</th>
@@ -169,7 +225,7 @@ export function PlayerProfile() {
               </thead>
               <tbody>
                 <tr>
-                  <td className="whitespace-nowrap text-sm font-medium text-paper">All formats</td>
+                  <td className="whitespace-nowrap">{scopeCell}</td>
                   {bowlStats.map(([label, value]) => (
                     <td key={String(label)} className="num whitespace-nowrap text-right text-sm">
                       {value}
@@ -184,7 +240,10 @@ export function PlayerProfile() {
         {recentPerformances && recentPerformances.length > 0 && (
           <section aria-labelledby="recent-heading">
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-rule pb-3">
-              <h2 id="recent-heading" className="display text-3xl">Recent performances</h2>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 id="recent-heading" className="display text-3xl">Recent performances</h2>
+                {activeFormat !== "all" && <FormatBadge format={activeFormat} />}
+              </div>
               <div className="flex items-center gap-2">
                 <label htmlFor="recent-count" className="label">Show</label>
                 <select
@@ -207,12 +266,19 @@ export function PlayerProfile() {
                   to={`/match/${performance.matchId}`}
                   className="grid gap-2 border-b border-rule py-3 transition-colors hover:bg-ink-raised sm:grid-cols-[140px_minmax(0,1fr)_minmax(0,1fr)] sm:items-baseline"
                 >
-                  <span className="label">
-                    {new Date(performance.timestamp * 1000).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="label">
+                      {new Date(performance.timestamp * 1000).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                    {activeFormat === "all" && performance.format && (
+                      <FormatBadge
+                        format={String(performance.format).toLowerCase() === "t15" ? "t15" : "test"}
+                      />
+                    )}
                   </span>
                   <span className="min-w-0 text-sm">
                     <span className="label mr-2">Bat</span>

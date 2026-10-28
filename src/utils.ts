@@ -28,6 +28,8 @@ export const getScoreString = (inn: any) => {
 
 export type MatchFormat = "test" | "t15";
 
+export type StatFormat = "all" | MatchFormat;
+
 /**
  * Resolves the format of a match. The API returns `format` for recent, live,
  * and single-match responses. The ball-count fallback keeps older cached
