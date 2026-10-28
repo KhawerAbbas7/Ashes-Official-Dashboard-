@@ -277,6 +277,11 @@ export function Home() {
                   >
                     <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       <FormatBadge match={match} />
+                      {match.phase && (
+                        <span className="label text-t15">
+                          Phase {match.phase.number} · {match.phase.name}
+                        </span>
+                      )}
                       <span className="display text-lg leading-none">{teamA}</span>
                       <span className="num text-sm text-ball">{taScores.join(" & ") || "—"}</span>
                       <span className="text-[10px] uppercase tracking-[0.2em] text-paper-mute">v</span>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
 import { ClipboardList, Radio, RefreshCw } from "lucide-react";
@@ -6,6 +6,29 @@ import { fetchLiveMatch } from "../api";
 import { getScoreString } from "../utils";
 import { FormatBadge } from "../components/MatchFormat";
 import { InningsTables } from "../components/InningsTables";
+
+function StateTag({
+  tone = "quiet",
+  children,
+}: {
+  tone?: "quiet" | "alert" | "accent";
+  children: ReactNode;
+}) {
+  const toneClass =
+    tone === "alert"
+      ? "border-ball/50 text-ball"
+      : tone === "accent"
+        ? "border-test/50 text-test"
+        : "border-rule text-paper-mute";
+
+  return (
+    <span
+      className={`inline-flex items-center border px-1.5 py-1 font-mono text-[9px] font-medium uppercase leading-none tracking-[0.14em] ${toneClass}`}
+    >
+      {children}
+    </span>
+  );
+}
 
 function commentaryTone(text: string) {
   const lower = text.toLowerCase();
@@ -104,6 +127,31 @@ export function LiveMatch() {
   const batters = currentInning.currentBatters || match.currentBatters || [];
   const bowlers = currentInning.currentBowlers || match.currentBowlers || [];
   const commentary = match.commentary || [];
+  const phase = match.phase || currentInning.phase || null;
+  const partnership = currentInning.partnership || match.partnership || null;
+  const fmt = (value: any, digits = 2) =>
+    typeof value === "number" && Number.isFinite(value) ? value.toFixed(digits) : "—";
+  const num = (value: any) => (typeof value === "number" && Number.isFinite(value) ? value : null);
+
+  const statusText = match.statusText || "Waiting in Lobby";
+  const isT15 = String(match.format ?? "").toLowerCase() === "t15";
+  const tossStatus = match.tossStatus || null;
+  const maxOvers = typeof match.maxBalls === "number" ? match.maxBalls / 6 : null;
+  const repLimit = num(match.repLimit);
+  const followOnLimit = num(match.followOnLimit);
+  const inningNo = num(currentInning.inningNo);
+  const battingTeam = currentInning.battingTeam || null;
+  const runRate = num(currentInning.runRate);
+  const target = num(currentInning.target);
+  const runsNeeded = num(currentInning.runsNeeded);
+  const ballsRemaining = num(currentInning.ballsRemaining);
+  const requiredRate = num(currentInning.requiredRate);
+  const currentOverRuns = num(currentInning.currentOverRuns);
+  const lastOverRuns = num(currentInning.lastOverRuns);
+  const partnershipRuns = num(partnership?.runs);
+  const partnershipBalls = num(partnership?.balls);
+  const timeline: string[] = currentInning.timeline || match.timeline || [];
+  const fallOfWickets: string[] = currentInning.fallOfWickets || [];
 
   return (
     <>
@@ -158,6 +206,151 @@ export function LiveMatch() {
             </p>
           </div>
         </div>
+      </section>
+
+      <section aria-labelledby="match-state-heading" className="border-b border-rule py-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="match-state-heading" className="label-strong">
+            Match state
+          </h2>
+          {isLive && <span className="label">Refreshes every 10s</span>}
+        </div>
+        <p className="display mt-2 break-words text-xl leading-snug sm:text-2xl">{statusText}</p>
+
+        {phase && (
+          <div className="mt-4 border-y border-rule bg-ink-raised px-3 py-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <p className="label-strong text-t15">
+                Phase {phase.number} · {phase.name}
+              </p>
+              <p className="label">
+                {phase.boundaries} {phase.boundaries === 1 ? "boundary" : "boundaries"} per over ·{" "}
+                {phase.oversLeft} overs left in phase
+              </p>
+            </div>
+          </div>
+        )}
+
+        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div>
+            <dt className="label">Innings</dt>
+            <dd className="mt-1 break-words text-sm leading-snug text-paper">
+              {inningNo ? `${inningNo} · ${battingTeam || "—"}` : "—"}
+            </dd>
+          </div>
+          <div>
+            <dt className="label">Run rate</dt>
+            <dd className="num mt-1 text-sm text-paper">{fmt(runRate)}</dd>
+          </div>
+          {target !== null && (
+            <div>
+              <dt className="label">Target</dt>
+              <dd className="num mt-1 text-sm text-paper">{target}</dd>
+            </div>
+          )}
+          {runsNeeded !== null && (
+            <div>
+              <dt className="label">To win</dt>
+              <dd className="num mt-1 text-sm text-paper">
+                {runsNeeded}
+                {ballsRemaining !== null && (
+                  <span className="text-paper-mute"> from {ballsRemaining} balls</span>
+                )}
+              </dd>
+            </div>
+          )}
+          {requiredRate !== null && (
+            <div>
+              <dt className="label">Required rate</dt>
+              <dd className="num mt-1 text-sm text-paper">{fmt(requiredRate)}</dd>
+            </div>
+          )}
+          {currentOverRuns !== null && (
+            <div>
+              <dt className="label">This over</dt>
+              <dd className="num mt-1 text-sm text-paper">{currentOverRuns}</dd>
+            </div>
+          )}
+          {lastOverRuns !== null && (
+            <div>
+              <dt className="label">Last over</dt>
+              <dd className="num mt-1 text-sm text-paper">{lastOverRuns}</dd>
+            </div>
+          )}
+          {partnershipRuns !== null && (
+            <div>
+              <dt className="label">Partnership</dt>
+              <dd className="num mt-1 text-sm text-paper">
+                {partnershipRuns}
+                {partnershipBalls !== null && (
+                  <span className="text-paper-mute"> ({partnershipBalls})</span>
+                )}
+              </dd>
+            </div>
+          )}
+          {isLive && !isT15 && match.day && (
+            <div>
+              <dt className="label">Day / session</dt>
+              <dd className="num mt-1 text-sm text-paper">
+                {match.day} · {match.session ?? "—"}
+              </dd>
+            </div>
+          )}
+          {tossStatus && (
+            <div className="col-span-2 sm:col-span-1">
+              <dt className="label">Toss</dt>
+              <dd className="mt-1 break-words text-sm leading-snug text-paper">{tossStatus}</dd>
+            </div>
+          )}
+          {maxOvers !== null && (
+            <div>
+              <dt className="label">Max overs</dt>
+              <dd className="num mt-1 text-sm text-paper">{maxOvers}</dd>
+            </div>
+          )}
+          {repLimit !== null && (
+            <div>
+              <dt className="label">Rep limit</dt>
+              <dd className="num mt-1 text-sm text-paper">{repLimit}</dd>
+            </div>
+          )}
+          {!isT15 && followOnLimit !== null && (
+            <div>
+              <dt className="label">Follow-on limit</dt>
+              <dd className="num mt-1 text-sm text-paper">{followOnLimit}</dd>
+            </div>
+          )}
+        </dl>
+
+        {timeline.length > 0 && (
+          <div className="mt-5 border-t border-rule pt-3">
+            <p className="label">Recent balls</p>
+            <ol className="mt-2 flex flex-wrap gap-1.5">
+              {timeline.map((ball, index) => {
+                const isWicket = String(ball).startsWith("W");
+                return (
+                  <li
+                    key={`${ball}-${index}`}
+                    className={`num inline-flex h-7 min-w-7 items-center justify-center border px-1.5 text-xs ${
+                      isWicket
+                        ? "border-ball/50 bg-ball/10 text-ball"
+                        : "border-rule text-paper-soft"
+                    }`}
+                  >
+                    {ball}
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
+
+        {fallOfWickets.length > 0 && (
+          <p className="mt-4 text-sm leading-snug text-paper-mute">
+            <span className="label mr-2">Fall of wickets</span>
+            {fallOfWickets.map((score, index) => `${score}/${index + 1}`).join(" · ")}
+          </p>
+        )}
       </section>
 
       <div className="mt-6 flex gap-6 border-b border-rule">
@@ -225,21 +418,43 @@ export function LiveMatch() {
                   const runs = batter.runs || 0;
                   const balls = batter.balls || 0;
                   return (
-                    <li
-                      key={index}
-                      className="flex items-baseline justify-between gap-3 border-b border-rule-soft py-2.5"
-                    >
-                      <span className="min-w-0 truncate text-sm text-paper">
-                        {name}
-                        {batter.onStrike && (
-                          <span className="ml-1 text-ball" aria-label="on strike">
-                            *
-                          </span>
+                    <li key={index} className="border-b border-rule-soft py-2.5">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="min-w-0 truncate text-sm text-paper">
+                          {name}
+                          {batter.onStrike && (
+                            <span className="ml-1 text-ball" aria-label="on strike">
+                              *
+                            </span>
+                          )}
+                        </span>
+                        <span className="num shrink-0 text-sm text-paper-soft">
+                          {runs} <span className="text-paper-mute">({balls})</span>
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {typeof batter.canDo0 === "boolean" && (
+                          <StateTag tone={batter.canDo0 ? "quiet" : "alert"}>
+                            {batter.canDo0 ? "Can do 0" : "Can't do 0"}
+                          </StateTag>
                         )}
-                      </span>
-                      <span className="num shrink-0 text-sm text-paper-soft">
-                        {runs} <span className="text-paper-mute">({balls})</span>
-                      </span>
+                        {typeof batter.canDoBoundary === "boolean" && (
+                          <StateTag tone={batter.canDoBoundary ? "quiet" : "alert"}>
+                            {batter.canDoBoundary ? "Can hit 4/6" : "Can't hit 4/6"}
+                          </StateTag>
+                        )}
+                        {typeof batter.boundaryLimit === "number" && (
+                          <StateTag
+                            tone={
+                              (batter.boundaryThisOver || 0) >= batter.boundaryLimit
+                                ? "alert"
+                                : "quiet"
+                            }
+                          >
+                            4/6 this over {batter.boundaryThisOver || 0}/{batter.boundaryLimit}
+                          </StateTag>
+                        )}
+                      </div>
                     </li>
                   );
                 })}
@@ -254,22 +469,35 @@ export function LiveMatch() {
                 {bowlers.map((bowler: any, index: number) => {
                   const name = bowler.playerName || bowler.name || "—";
                   return (
-                    <li
-                      key={index}
-                      className="flex items-baseline justify-between gap-3 border-b border-rule-soft py-2.5"
-                    >
-                      <span className="min-w-0 truncate text-sm text-paper">
-                        {name}
-                        {bowler.isBowling && (
-                          <span className="ml-1 text-live" aria-label="bowling">
-                            ●
-                          </span>
+                    <li key={index} className="border-b border-rule-soft py-2.5">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="min-w-0 truncate text-sm text-paper">
+                          {name}
+                          {bowler.isBowling && (
+                            <span className="ml-1 text-live" aria-label="bowling">
+                              ●
+                            </span>
+                          )}
+                        </span>
+                        <span className="num shrink-0 text-sm text-paper-soft">
+                          {bowler.wickets || 0}/{bowler.runs || 0}{" "}
+                          <span className="text-paper-mute">({bowler.overs || "0.0"})</span>
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {bowler.isOnHattrick && <StateTag tone="alert">On a hattrick</StateTag>}
+                        {bowler.lastOverMaiden && (
+                          <StateTag tone="accent">Maiden last over</StateTag>
                         )}
-                      </span>
-                      <span className="num shrink-0 text-sm text-paper-soft">
-                        {bowler.wickets || 0}/{bowler.runs || 0}{" "}
-                        <span className="text-paper-mute">({bowler.overs || "0.0"})</span>
-                      </span>
+                        {typeof bowler.canDo0 === "boolean" && (
+                          <StateTag tone={bowler.canDo0 ? "alert" : "quiet"}>
+                            {bowler.canDo0 ? "Bowler can do 0" : "Bowler can't do 0"}
+                          </StateTag>
+                        )}
+                        {typeof bowler.maidens === "number" && bowler.maidens > 0 && (
+                          <StateTag>Maidens {bowler.maidens}</StateTag>
+                        )}
+                      </div>
                     </li>
                   );
                 })}

@@ -295,6 +295,21 @@ export function Matches() {
                         {teamB}{" "}
                         {tbScores.length > 0 && <span className="num text-base text-ball">{tbScores.join(" & ")}</span>}
                       </p>
+                      {isLive && match.statusText && (
+                        <p className="mt-1 text-sm leading-snug text-paper-mute">{match.statusText}</p>
+                      )}
+                      {match.phase && (
+                        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="label text-t15">
+                            Phase {match.phase.number} · {match.phase.name}
+                          </span>
+                          <span className="label">
+                            {match.phase.boundaries}{" "}
+                            {match.phase.boundaries === 1 ? "boundary" : "boundaries"} per over
+                          </span>
+                          <span className="label">{match.phase.oversLeft} overs left in phase</span>
+                        </p>
+                      )}
                       {!isLive && (
                         <dl className="mt-3 grid gap-1.5">
                           <div className="flex gap-3">
