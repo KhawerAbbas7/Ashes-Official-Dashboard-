@@ -22,7 +22,10 @@ export function InningsTables({ inning }: InningsTablesProps) {
     <div className="space-y-8">
       {batters.length > 0 && (
         <div>
-          <p className="label mb-2">Batting</p>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <p className="label">Batting</p>
+            {inning.isFollowOn && <StateTag tone="accent">Follow-on</StateTag>}
+          </div>
           <div className="scroll-x border-y border-rule">
             <table className="data-table min-w-[620px]">
               <caption className="sr-only">Batting figures</caption>

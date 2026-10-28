@@ -164,6 +164,11 @@ export function MatchScorecard() {
                 >
                   <span className="text-paper">{battingTeam}</span>{" "}
                   <span className="num">{score}</span>
+                  {inning.isFollowOn && (
+                    <span className="ml-1.5 text-test" title="Follow-on innings">
+                      f/o
+                    </span>
+                  )}
                 </button>
               );
             })}
