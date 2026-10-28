@@ -195,6 +195,8 @@ export function MatchScorecard() {
                 matchId={id}
                 inningNo={inningsData[activeTab]?.inningNo ?? activeTab + 1}
                 format={String(scorecard?.format || match.format || "test").toLowerCase()}
+                batters={inningsData[activeTab]?.batters || []}
+                bowlers={inningsData[activeTab]?.bowlers || []}
               />
             ) : null}
           </div>

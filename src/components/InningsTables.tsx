@@ -1,3 +1,13 @@
+import { ChevronDown } from "lucide-react";
+import { StateTag } from "./StateTag";
+
+function dismissalAfkLabel(side: string | null) {
+  if (side === "both") return "Both players AFK";
+  if (side === "batter") return "Batter AFK";
+  if (side === "bowler") return "Bowler AFK";
+  return "AFK dismissal";
+}
+
 type InningsTablesProps = {
   inning: any;
 };
@@ -14,7 +24,7 @@ export function InningsTables({ inning }: InningsTablesProps) {
         <div>
           <p className="label mb-2">Batting</p>
           <div className="scroll-x border-y border-rule">
-            <table className="data-table min-w-[560px]">
+            <table className="data-table min-w-[620px]">
               <caption className="sr-only">Batting figures</caption>
               <thead>
                 <tr>
@@ -23,6 +33,7 @@ export function InningsTables({ inning }: InningsTablesProps) {
                   <th scope="col" className="text-right">B</th>
                   <th scope="col" className="text-right">4s</th>
                   <th scope="col" className="text-right">6s</th>
+                  <th scope="col" className="text-right">0s</th>
                   <th scope="col" className="text-right">SR</th>
                 </tr>
               </thead>
@@ -32,13 +43,63 @@ export function InningsTables({ inning }: InningsTablesProps) {
                     <td>
                       <span className="block text-sm font-medium text-paper">{batter.playerName || "—"}</span>
                       {batter.dismissedBy && (
-                        <span className="mt-0.5 block font-mono text-[10px] text-paper-mute">{batter.dismissedBy}</span>
+                        batter.dismissal ? (
+                          <details className="group mt-0.5">
+                            <summary className="details-summary flex items-center gap-1 font-mono text-[10px] text-paper-mute transition-colors hover:text-paper">
+                              <span>{batter.dismissedBy}</span>
+                              <ChevronDown
+                                className="h-3 w-3 shrink-0 transition-transform group-open:rotate-180"
+                                aria-hidden="true"
+                              />
+                            </summary>
+                            <div className="mt-2 max-w-[18rem] space-y-1.5 border-l border-rule pl-2.5">
+                              <p className="label flex flex-wrap items-baseline gap-x-1.5">
+                                <span>{batter.dismissal.isAfk ? "AFK after" : "Ball"} {batter.dismissal.ball}</span>
+                                {batter.dismissal.inningScore && (
+                                  <>
+                                    <span className="text-paper-mute" aria-hidden="true">·</span>
+                                    <span className="num text-paper">{batter.dismissal.inningScore}</span>
+                                  </>
+                                )}
+                              </p>
+                              {batter.dismissal.isAfk ? (
+                                <p className="text-xs leading-snug text-paper-soft">
+                                  {dismissalAfkLabel(batter.dismissal.afkSide)}
+                                </p>
+                              ) : (
+                                <p className="text-xs leading-snug text-paper-soft">
+                                  Batter <span className="num text-paper">{batter.dismissal.batterNum}</span>
+                                  <span className="text-paper-mute"> · </span>
+                                  Bowler <span className="num text-paper">{batter.dismissal.bowlerNum}</span>
+                                  <span className="text-paper-mute"> · </span>
+                                  <span className="num text-paper">{batter.dismissal.runs}</span> runs
+                                </p>
+                              )}
+                              {!batter.dismissal.isAfk && (
+                                <div className="flex flex-wrap gap-1">
+                                  <StateTag tone={batter.dismissal.batterCanDo0 ? "quiet" : "alert"}>
+                                    {batter.dismissal.batterCanDo0 ? "Can do 0" : "Can't do 0"}
+                                  </StateTag>
+                                  <StateTag tone={batter.dismissal.batterCanDoBoundary ? "quiet" : "alert"}>
+                                    {batter.dismissal.batterCanDoBoundary ? "Can hit 4/6" : "Can't hit 4/6"}
+                                  </StateTag>
+                                </div>
+                              )}
+                              {batter.dismissal.matchStatus && (
+                                <p className="text-xs leading-snug text-paper-mute">{batter.dismissal.matchStatus}</p>
+                              )}
+                            </div>
+                          </details>
+                        ) : (
+                          <span className="mt-0.5 block font-mono text-[10px] text-paper-mute">{batter.dismissedBy}</span>
+                        )
                       )}
                     </td>
                     <td className="num text-right text-sm font-medium text-paper">{batter.runs || 0}</td>
                     <td className="num text-right text-sm">{batter.balls || 0}</td>
                     <td className="num text-right text-sm">{batter.fours || 0}</td>
                     <td className="num text-right text-sm">{batter.sixes || 0}</td>
+                    <td className="num text-right text-sm">{batter.dots || 0}</td>
                     <td className="num text-right text-sm">{(batter.strikeRate || 0).toFixed(1)}</td>
                   </tr>
                 ))}

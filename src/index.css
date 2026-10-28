@@ -133,6 +133,14 @@
     @apply w-full appearance-none border border-rule bg-ink px-3 py-2.5 pr-9 font-sans text-sm text-paper focus:border-ball focus:outline-none;
   }
 
+  .details-summary {
+    @apply cursor-pointer list-none;
+  }
+
+  .details-summary::-webkit-details-marker {
+    display: none;
+  }
+
   .panel {
     @apply border border-rule bg-ink-raised;
   }

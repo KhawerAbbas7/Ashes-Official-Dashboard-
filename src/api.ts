@@ -42,13 +42,17 @@ export const fetchMatchDeliveries = async (
   inningNo: number,
   page: number = 1,
   filter: string = "all",
-  limit: number = 20
+  limit: number = 20,
+  batterId: string = "",
+  bowlerId: string = ""
 ) => {
   const url = new URL(`${BASE}/matches/${matchId}/deliveries`, window.location.origin);
   url.searchParams.append("inningNo", String(inningNo));
   url.searchParams.append("page", String(page));
   url.searchParams.append("limit", String(limit));
   url.searchParams.append("filter", filter);
+  if (batterId) url.searchParams.append("batterId", batterId);
+  if (bowlerId) url.searchParams.append("bowlerId", bowlerId);
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error("Failed to fetch deliveries");
   return res.json();

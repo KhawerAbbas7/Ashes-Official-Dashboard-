@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { fetchMatchDeliveries } from "../api";
 import { StateTag } from "./StateTag";
 
@@ -50,24 +51,30 @@ type DeliveryFeedProps = {
   matchId: string;
   inningNo: number;
   format: string;
+  batters?: any[];
+  bowlers?: any[];
   key?: string | number;
 };
 
-export function DeliveryFeed({ matchId, inningNo, format }: DeliveryFeedProps) {
+export function DeliveryFeed({ matchId, inningNo, format, batters = [], bowlers = [] }: DeliveryFeedProps) {
   const [filter, setFilter] = useState<DeliveryFilter>("all");
+  const [batterId, setBatterId] = useState("");
+  const [bowlerId, setBowlerId] = useState("");
   const [page, setPage] = useState(1);
   const [loadedPage, setLoadedPage] = useState(0);
   const [retry, setRetry] = useState(0);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const batterSelectId = useId();
+  const bowlerSelectId = useId();
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(false);
 
-    fetchMatchDeliveries(matchId, inningNo, page, filter)
+    fetchMatchDeliveries(matchId, inningNo, page, filter, 20, batterId, bowlerId)
       .then((res) => {
         if (cancelled) return;
         setLoadedPage(page);
@@ -89,15 +96,29 @@ export function DeliveryFeed({ matchId, inningNo, format }: DeliveryFeedProps) {
     return () => {
       cancelled = true;
     };
-  }, [matchId, inningNo, page, filter, retry]);
+  }, [matchId, inningNo, page, filter, batterId, bowlerId, retry]);
 
-  const changeFilter = (next: DeliveryFilter) => {
-    if (next === filter) return;
-    setFilter(next);
+  const resetFeed = () => {
     setPage(1);
     setLoadedPage(0);
     setRetry(0);
     setData(null);
+  };
+
+  const changeFilter = (next: DeliveryFilter) => {
+    if (next === filter) return;
+    setFilter(next);
+    resetFeed();
+  };
+
+  const changeBatter = (next: string) => {
+    setBatterId(next);
+    resetFeed();
+  };
+
+  const changeBowler = (next: string) => {
+    setBowlerId(next);
+    resetFeed();
   };
 
   const loadOlder = () => {
@@ -121,6 +142,58 @@ export function DeliveryFeed({ matchId, inningNo, format }: DeliveryFeedProps) {
             {deliveries.length} of {data.total}
           </span>
         )}
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label htmlFor={batterSelectId} className="label">
+            Batter
+          </label>
+          <div className="relative mt-1.5">
+            <select
+              id={batterSelectId}
+              value={batterId}
+              onChange={(event) => changeBatter(event.target.value)}
+              className="select py-2 text-xs"
+            >
+              <option value="">All batters</option>
+              {batters.map((batter: any) => (
+                <option key={batter.playerId} value={batter.playerId}>
+                  {batter.playerName}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-paper-mute"
+              aria-hidden="true"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor={bowlerSelectId} className="label">
+            Bowler
+          </label>
+          <div className="relative mt-1.5">
+            <select
+              id={bowlerSelectId}
+              value={bowlerId}
+              onChange={(event) => changeBowler(event.target.value)}
+              className="select py-2 text-xs"
+            >
+              <option value="">All bowlers</option>
+              {bowlers.map((bowler: any) => (
+                <option key={bowler.playerId} value={bowler.playerId}>
+                  {bowler.playerName}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-paper-mute"
+              aria-hidden="true"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="scroll-x mt-3 flex gap-5 border-b border-rule" role="group" aria-label="Filter deliveries">
@@ -153,7 +226,9 @@ export function DeliveryFeed({ matchId, inningNo, format }: DeliveryFeedProps) {
       ) : deliveries.length === 0 ? (
         <div className="border-b border-rule py-10 text-center">
           <p className="label">
-            {filter === "all" ? "No deliveries recorded for this innings" : "No deliveries match this filter"}
+            {filter === "all" && !batterId && !bowlerId
+              ? "No deliveries recorded for this innings"
+              : "No deliveries match these filters"}
           </p>
         </div>
       ) : (
