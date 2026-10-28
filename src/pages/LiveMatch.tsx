@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { ClipboardList, Radio, RefreshCw } from "lucide-react";
 import { fetchLiveMatch } from "../api";
 import { getScoreString } from "../utils";
+import { FormatBadge } from "../components/MatchFormat";
 
 function renderCustomInning(inning: any) {
   const batters = inning.batters || [];
@@ -154,6 +155,9 @@ export function LiveMatch() {
             <div className="inline-flex items-center gap-[8px] bg-[#10b981]/10 border border-[#10b981]/20 rounded-md px-4 py-1.5 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
               <span className="w-2 h-2 rounded-full bg-[#10b981] inline-block animate-pulse"></span>
               <span className="font-mono text-[10px] text-[#10b981] font-bold uppercase tracking-[0.2em]">Live</span>
+            </div>
+            <div className="mt-3">
+              <FormatBadge match={match} detail />
             </div>
             <div className="font-mono text-[10px] text-ashes-very-muted uppercase tracking-[0.2em] text-center mt-4 border-t border-ashes-border pt-4 min-w-[120px]">
               {guild} <br/><span className="text-zinc-500">{channel}</span>

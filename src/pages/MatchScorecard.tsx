@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import { fetchMatch, fetchScorecard } from "../api";
 import { getResultText, getScoreString } from "../utils";
+import { FormatBadge } from "../components/MatchFormat";
 
 function renderCustomInning(inning: any) {
   const batters = inning.batters || [];
@@ -143,6 +144,7 @@ export function MatchScorecard() {
       <div className="text-center border-b border-ashes-border pb-8 md:pb-12 mb-8 md:mb-10 relative">
         <div className="absolute inset-0 bg-indigo-500/10 blur-[80px] rounded-full z-0 h-32 w-full md:w-1/2 left-0 md:left-1/4 top-0 pointer-events-none"></div>
         <div className="font-mono text-[10px] font-bold text-ashes-very-muted uppercase tracking-[0.3em] mb-4 md:mb-6 relative z-10 flex flex-wrap justify-center items-center gap-2">
+          <FormatBadge match={match} detail />
           <span>{guild}</span> <span className="hidden sm:inline text-zinc-500">·</span> <span>{channel}</span>
         </div>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-10 flex-wrap relative z-10 w-full px-4 sm:px-6 py-8 sm:py-10 bg-ashes-card shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-ashes-border rounded-xl">

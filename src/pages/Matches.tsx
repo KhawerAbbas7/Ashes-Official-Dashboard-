@@ -5,6 +5,7 @@ import { RefreshCw, Search, SlidersHorizontal, X } from "lucide-react";
 import { fetchLiveMatches, fetchMatches } from "../api";
 import { getResultText, getScoreString } from "../utils";
 import { PageHeader } from "../components/PageHeader";
+import { FormatBadge, FormatLegend } from "../components/MatchFormat";
 
 export function Matches() {
   const [activeTab, setActiveTab] = useState<"live" | "recent">("recent");
@@ -59,14 +60,16 @@ export function Matches() {
     <>
       <Helmet>
         <title>Matches · Ashes</title>
-        <meta name="description" content="View recent and live Ashes cricket matches." />
+        <meta name="description" content="View recent and live Ashes Test and T15 cricket matches." />
       </Helmet>
 
       <PageHeader
         eyebrow="Fixtures & results"
         title="Matches"
-        description="Browse completed scorecards or follow live matches and open lobbies across Discord."
+        description="Browse completed scorecards or follow live matches and open lobbies. Every match is clearly labelled Test or T15."
       />
+
+      <FormatLegend />
 
       <div className="flex w-full mb-6 border-b border-ashes-border">
         <button
@@ -155,6 +158,7 @@ export function Matches() {
                   <div key={match.id} className="bg-ashes-card border border-ashes-border border-l-[3px] border-l-ashes-red hover:border-ashes-red/30 transition-colors rounded-sm overflow-hidden flex flex-col md:flex-row shadow-lg">
                     <div className="p-4 md:p-6 flex flex-col items-start w-full md:w-3/4">
                       <div className="font-mono text-[10px] text-ashes-very-muted uppercase tracking-[0.2em] mb-4 flex items-center flex-wrap gap-2">
+                        <FormatBadge match={match} detail />
                         {ts ? <span className="block">{new Date(ts * 1000).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} <span className="hidden sm:inline">·</span></span> : ""} <span>{match.guildName || "—"}</span> <span className="hidden sm:inline">·</span> <span>{match.channelName || "—"}</span>
                       </div>
                       <div className="font-bebas text-2xl sm:text-3xl text-white tracking-wide mb-4 flex flex-wrap items-center leading-none">
@@ -218,9 +222,11 @@ export function Matches() {
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 bg-[#eab308]/10 text-[#eab308] border border-[#eab308]/20 px-2 py-0.5 rounded-sm">
-                            ⏳ Lobby
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#eab308]" aria-hidden="true" />
+                            Lobby
                           </span>
                         )}
+                        <FormatBadge match={match} detail />
                         {match.guildName || "—"} · {match.channelName || "—"}
                       </div>
                       <div className="font-bebas text-2xl sm:text-3xl text-white tracking-wide mb-2 flex flex-wrap items-center">

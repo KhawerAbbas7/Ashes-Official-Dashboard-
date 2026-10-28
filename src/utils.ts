@@ -25,3 +25,20 @@ export const getScoreString = (inn: any) => {
   if (inn.isDeclared) score += "d";
   return score;
 };
+
+export type MatchFormat = "test" | "t15";
+
+/**
+ * Resolves the format of a match. The API returns `format` for recent, live,
+ * and single-match responses. The ball-count fallback keeps older cached
+ * responses working: T15 is a 90-ball match.
+ */
+export const getMatchFormat = (match: any): MatchFormat => {
+  const raw = String(match?.format ?? "").trim().toLowerCase();
+  if (raw === "t15" || raw === "t10") return "t15";
+  if (raw === "test") return "test";
+
+  const maxBalls = Number(match?.maxBalls ?? match?.matchMaximumBalls ?? 0);
+  return maxBalls === 90 ? "t15" : "test";
+};
+

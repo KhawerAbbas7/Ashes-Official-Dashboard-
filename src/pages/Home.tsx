@@ -111,10 +111,10 @@ const STEPS = [
 ];
 
 const ADVANCED_RULES = [
-  "Each match has four innings — three if a team wins by an innings.",
+  "In Test matches, each game has four innings — three if a team wins by an innings.",
   "Bowlers cannot choose 0.",
   "The number 5 does not exist.",
-  "A batter may score a boundary (4 or 6) only once per over. This applies per batter, so the striker and non-striker can each hit one in the same over.",
+  "In Test matches, a batter may score a boundary (4 or 6) only once per over. This applies per batter, so the striker and non-striker can each hit one in the same over.",
   "A batter cannot choose 0 more than three times in a row, even across overs.",
 ];
 
@@ -158,15 +158,15 @@ export function Home() {
   return (
     <>
       <Helmet>
-        <title>Ashes · Test Cricket for Discord</title>
+        <title>Ashes · Test & T15 Cricket for Discord</title>
         <meta
           name="description"
-          content="Ashes is a real-time Test cricket simulator for Discord. Host matches, follow live scorecards, and compete on global leaderboards."
+          content="Ashes is a real-time Test and T15 cricket simulator for Discord. Host matches, follow live scorecards, and compete on global leaderboards."
         />
-        <meta property="og:title" content="Ashes · Test Cricket for Discord" />
+        <meta property="og:title" content="Ashes · Test & T15 Cricket for Discord" />
         <meta
           property="og:description"
-          content="Host live Test matches in your Discord server, track every delivery, and compete on global leaderboards."
+          content="Host live Test and T15 cricket matches in your Discord server, track every delivery, and compete on global leaderboards."
         />
       </Helmet>
 
@@ -183,16 +183,16 @@ export function Home() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
             </span>
-            Live Test cricket on Discord
+            Live cricket on Discord
           </span>
 
           <h1 className="mt-7 max-w-4xl text-balance font-bebas text-4xl leading-[1.05] tracking-wide text-white sm:text-6xl md:text-7xl">
-            Test cricket, <span className="italic text-ashes-red">ball by ball.</span>
+            Cricket, <span className="italic text-ashes-red">ball by ball.</span>
           </h1>
 
           <p className="mt-6 max-w-2xl text-pretty text-base leading-relaxed text-zinc-400 sm:text-lg">
-            Ashes brings the tension of Test cricket to your Discord server — live simulations,
-            complete scorecards, and a global stage for every player.
+            Ashes brings the tension of Test cricket and the pace of T15 to your Discord server —
+            live simulations, complete scorecards, and a global stage for every player.
           </p>
 
           <div className="mt-9 flex w-full flex-col gap-3 px-2 sm:w-auto sm:flex-row sm:px-0">
@@ -219,7 +219,7 @@ export function Home() {
           <dl className="mt-14 grid w-full max-w-3xl grid-cols-1 divide-y divide-ashes-border overflow-hidden rounded-lg border border-ashes-border bg-ashes-card/70 text-left sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {[
               { icon: Activity, label: "Simulation", value: "Ball by ball" },
-              { icon: ListChecks, label: "Format", value: "Full Test match" },
+              { icon: ListChecks, label: "Formats", value: "Test & T15" },
               { icon: Trophy, label: "Competition", value: "Global rankings" },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-center gap-3 px-5 py-4">
@@ -354,6 +354,13 @@ export function Home() {
                   </li>
                 ))}
               </ul>
+              <div className="mt-5 rounded-sm border border-sky-400/20 bg-sky-400/[0.04] p-4">
+                <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-sky-300">T15 format</p>
+                <p className="mt-2 text-sm leading-relaxed text-ashes-muted">
+                  Two innings of 15 overs. Boundary limits change by phase: two per batter in the powerplay,
+                  one in the middle, and two in the death overs.
+                </p>
+              </div>
             </article>
           </div>
         </section>
