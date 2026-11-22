@@ -216,12 +216,15 @@ export function Playground() {
         const newBatterBallsThisOver = (prev.batter.ballsThisOver + 1) % 6;
         const isNewOver = newBatterBallsThisOver === 0;
 
+        const isBoundary = result.batterChoice === 4 || result.batterChoice === 6;
+        const newBoundariesThisOver = isNewOver ? 0 : prev.batter.boundariesThisOver + (isBoundary ? 1 : 0);
+
         const newBatter: BatterState = {
           ...prev.batter,
           runs: prev.batter.runs + (result.isWicket ? 0 : result.runs),
           balls: prev.batter.balls + 1,
           ballsThisOver: newBatterBallsThisOver,
-          boundariesThisOver: isNewOver ? 0 : prev.batter.boundariesThisOver,
+          boundariesThisOver: newBoundariesThisOver,
           consecutiveZeros: result.batterChoice === 0 ? prev.batter.consecutiveZeros + 1 : 0,
           fours: prev.batter.fours + (result.batterChoice === 4 ? 1 : 0),
           sixes: prev.batter.sixes + (result.batterChoice === 6 ? 1 : 0),
@@ -318,7 +321,7 @@ export function Playground() {
     if (bowlTimeoutRef.current) {
       window.clearTimeout(bowlTimeoutRef.current);
     }
-    setState(INITIAL_STATE);
+    setState((prev) => ({ ...INITIAL_STATE, format: prev.format }));
     setLastResult(null);
     setBatterChoice(null);
     setIsBowling(false);
@@ -326,7 +329,8 @@ export function Playground() {
 
   const toggleFormat = () => {
     setState((prev) => ({ ...prev, format: prev.format === "t15" ? "test" : "t15" }));
-    resetInnings();
+    // Reset innings after format change
+    setTimeout(() => resetInnings(), 0);
   };
 
   const getOutcomeLabel = (result: DeliveryResult): { label: string; className: string; icon: React.ReactNode } => {
