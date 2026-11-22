@@ -6,6 +6,7 @@ import { Leaderboard } from "./pages/Leaderboard";
 import { LiveMatch } from "./pages/LiveMatch";
 import { Matches } from "./pages/Matches";
 import { MatchScorecard } from "./pages/MatchScorecard";
+import { Playground } from "./pages/Playground";
 import { Rankings } from "./pages/Rankings";
 import { Players } from "./pages/Players";
 import { PlayerProfile } from "./pages/PlayerProfile";
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="rankings" element={<Rankings />} />
           <Route path="players" element={<Players />} />
           <Route path="player/:id" element={<PlayerProfile />} />
+          <Route path="playground" element={<Playground />} />
         </Route>
       </Routes>
       <Analytics />

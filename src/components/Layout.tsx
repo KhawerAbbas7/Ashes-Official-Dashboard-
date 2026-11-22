@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { to: "/leaderboard", label: "Leaderboard", matches: (path: string) => path.startsWith("/leaderboard") },
   { to: "/rankings", label: "Rankings", matches: (path: string) => path.startsWith("/rankings") },
   { to: "/players", label: "Players", matches: (path: string) => path.startsWith("/player") },
+  { to: "/playground", label: "Playground", matches: (path: string) => path.startsWith("/playground") },
 ];
 
 export function Layout() {
@@ -182,6 +183,7 @@ export function Layout() {
                 <li><Link to="/leaderboard" className="text-paper-mute transition-colors hover:text-paper">Leaderboard</Link></li>
                 <li><Link to="/rankings" className="text-paper-mute transition-colors hover:text-paper">Rankings</Link></li>
                 <li><Link to="/players" className="text-paper-mute transition-colors hover:text-paper">Players</Link></li>
+                <li><Link to="/playground" className="text-paper-mute transition-colors hover:text-paper">Playground</Link></li>
               </ul>
             </div>
 
