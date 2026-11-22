@@ -1,15 +1,19 @@
 import { Helmet } from "react-helmet-async";
-import { useState, useCallback } from "react";
-import { ArrowRight, RefreshCw, Info, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+import { ArrowRight, RefreshCw, Info, AlertTriangle, CheckCircle, XCircle, Zap } from "lucide-react";
 import { FormatBadge } from "../components/MatchFormat";
 
 const VALID_NUMBERS = [0, 1, 2, 3, 4, 6] as const;
 type ValidNumber = typeof VALID_NUMBERS[number];
 
-const PHASES = {
-  test: { name: "Session", boundaries: 1, oversPerPhase: 30 },
-  t15: { name: "Phase", boundaries: [2, 1, 2], oversPerPhase: 5 },
-};
+const BOWLER_NORMAL = [1, 2, 3, 4, 6] as const;
+const BOWLER_WITH_ZERO = [0, 1, 2, 3, 4, 6] as const;
+
+const PHASES_T15 = [
+  { name: "Powerplay", overs: 5, boundaries: 2 },
+  { name: "Middle", overs: 5, boundaries: 1 },
+  { name: "Death", overs: 5, boundaries: 2 },
+] as const;
 
 const DISMISSAL_TYPES = ["Bowled", "Caught", "LBW", "Run Out", "Stumped"] as const;
 
@@ -21,21 +25,34 @@ function ballsToOvers(balls: number): string {
   return `${Math.floor(balls / 6)}.${balls % 6}`;
 }
 
-function getPhase(format: "test" | "t15", balls: number): number {
-  if (format === "test") return Math.min(3, Math.floor(balls / 30) + 1);
+function getPhaseT15(balls: number): number {
   return Math.min(3, Math.floor(balls / 5) + 1);
 }
 
-function canScoreBoundary(format: "test" | "t15", batterBallsThisOver: number, boundariesThisOver: number): boolean {
-  if (format === "test") {
-    return boundariesThisOver < (batterBallsThisOver >= 15 ? 2 : 1);
-  }
-  const phase = getPhase("t15", batterBallsThisOver);
-  return boundariesThisOver < PHASES.t15.boundaries[phase - 1];
+function getSessionTest(balls: number): number {
+  return Math.min(3, Math.floor(balls / 30) + 1);
 }
 
-function canChooseZero(consecutiveZeros: number): boolean {
+function canScoreBoundaryTest(batterBallsInInnings: number, boundariesThisOver: number): boolean {
+  if (batterBallsInInnings >= 15) {
+    return boundariesThisOver < 2;
+  }
+  return boundariesThisOver < 1;
+}
+
+function canScoreBoundaryT15(phase: number, boundariesThisOver: number): boolean {
+  return boundariesThisOver < PHASES_T15[phase - 1].boundaries;
+}
+
+function canBatterChooseZero(consecutiveZeros: number): boolean {
   return consecutiveZeros < 3;
+}
+
+function getBowlerAllowed(bowler: BowlerState, inningBalls: number): readonly ValidNumber[] {
+  if (bowler.isOnHatTrick || (inningBalls >= 6 && bowler.lastOverMaiden && !bowler.zeroByBowler)) {
+    return BOWLER_WITH_ZERO;
+  }
+  return BOWLER_NORMAL;
 }
 
 interface DeliveryResult {
@@ -47,22 +64,42 @@ interface DeliveryResult {
   dismissal?: string;
   boundaryBlocked?: boolean;
   zeroBlocked?: boolean;
-  phase?: number;
+  phaseOrSession: number;
+}
+
+interface BatterState {
+  runs: number;
+  balls: number;
+  ballsThisOver: number;
+  boundariesThisOver: number;
+  consecutiveZeros: number;
+  fours: number;
+  sixes: number;
+}
+
+interface BowlerState {
+  runsConceded: number;
+  balls: number;
+  wickets: number;
+  maidenOvers: number;
+  lastOverMaiden: boolean;
+  currentOverRuns: number;
+  isOnHatTrick: boolean;
+  zeroByBowler: boolean;
+  timeline: string[];
+}
+
+interface InningsState {
+  runs: number;
+  wickets: number;
+  balls: number;
 }
 
 interface PlaygroundState {
   format: "test" | "t15";
-  inningsBalls: number;
-  batterBallsThisOver: number;
-  boundariesThisOver: number;
-  consecutiveZeros: number;
-  batterRuns: number;
-  batterBalls: number;
-  bowlerRunsConceded: number;
-  bowlerBalls: number;
-  bowlerWickets: number;
-  wickets: number;
-  totalRuns: number;
+  batter: BatterState;
+  bowler: BowlerState;
+  innings: InningsState;
   history: Array<{
     ball: number;
     result: DeliveryResult;
@@ -76,39 +113,71 @@ interface PlaygroundState {
   }>;
 }
 
-const INITIAL_STATE: PlaygroundState = {
-  format: "t15",
-  inningsBalls: 0,
-  batterBallsThisOver: 0,
+const INITIAL_BATTER: BatterState = {
+  runs: 0,
+  balls: 0,
+  ballsThisOver: 0,
   boundariesThisOver: 0,
   consecutiveZeros: 0,
-  batterRuns: 0,
-  batterBalls: 0,
-  bowlerRunsConceded: 0,
-  bowlerBalls: 0,
-  bowlerWickets: 0,
+  fours: 0,
+  sixes: 0,
+};
+
+const INITIAL_BOWLER: BowlerState = {
+  runsConceded: 0,
+  balls: 0,
   wickets: 0,
-  totalRuns: 0,
+  maidenOvers: 0,
+  lastOverMaiden: false,
+  currentOverRuns: 0,
+  isOnHatTrick: false,
+  zeroByBowler: false,
+  timeline: [],
+};
+
+const INITIAL_INNINGS: InningsState = {
+  runs: 0,
+  wickets: 0,
+  balls: 0,
+};
+
+const INITIAL_STATE: PlaygroundState = {
+  format: "t15",
+  batter: INITIAL_BATTER,
+  bowler: INITIAL_BOWLER,
+  innings: INITIAL_INNINGS,
   history: [],
 };
 
 export function Playground() {
   const [state, setState] = useState<PlaygroundState>(INITIAL_STATE);
   const [batterChoice, setBatterChoice] = useState<ValidNumber | null>(null);
-  const [bowlerChoice, setBowlerChoice] = useState<ValidNumber | null>(null);
   const [lastResult, setLastResult] = useState<DeliveryResult | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
 
-  const phase = getPhase(state.format, state.inningsBalls);
-  const overs = ballsToOvers(state.inningsBalls);
-  const batterSR = state.batterBalls > 0 ? ((state.batterRuns / state.batterBalls) * 100).toFixed(2) : "0.00";
-  const bowlerEcon = state.bowlerBalls > 0 ? ((state.bowlerRunsConceded / state.bowlerBalls) * 6).toFixed(2) : "0.00";
-  const canBoundary = canScoreBoundary(state.format, state.batterBallsThisOver, state.boundariesThisOver);
-  const canZero = canChooseZero(state.consecutiveZeros);
+  const phaseOrSession = useMemo(() => {
+    if (state.format === "t15") return getPhaseT15(state.innings.balls);
+    return getSessionTest(state.innings.balls);
+  }, [state.format, state.innings.balls]);
+
+  const overs = ballsToOvers(state.innings.balls);
+  const batterSR = state.batter.balls > 0 ? ((state.batter.runs / state.batter.balls) * 100).toFixed(2) : "0.00";
+  const bowlerEcon = state.bowler.balls > 0 ? ((state.bowler.runsConceded / state.bowler.balls) * 6).toFixed(2) : "0.00";
+
+  const canBoundary = useMemo(() => {
+    if (state.format === "test") {
+      return canScoreBoundaryTest(state.batter.balls, state.batter.boundariesThisOver);
+    }
+    return canScoreBoundaryT15(phaseOrSession, state.batter.boundariesThisOver);
+  }, [state.format, state.batter.balls, state.batter.boundariesThisOver, phaseOrSession]);
+
+  const canZero = canBatterChooseZero(state.batter.consecutiveZeros);
+  const bowlerAllowed = getBowlerAllowed(state.bowler, state.innings.balls);
+  const canBowlerChooseZero = bowlerAllowed.includes(0);
 
   const simulateDelivery = useCallback((): DeliveryResult => {
     const bChoice = batterChoice ?? VALID_NUMBERS[Math.floor(Math.random() * VALID_NUMBERS.length)];
-    const wChoice = bowlerChoice ?? VALID_NUMBERS[Math.floor(Math.random() * VALID_NUMBERS.length)];
+    const wChoice = bowlerAllowed[Math.floor(Math.random() * bowlerAllowed.length)];
 
     let outcome: DeliveryResult["outcome"] = "runs";
     let runs = 0;
@@ -153,64 +222,104 @@ export function Playground() {
       dismissal,
       boundaryBlocked,
       zeroBlocked,
-      phase,
+      phaseOrSession,
     };
-  }, [batterChoice, bowlerChoice, canBoundary, canZero, phase]);
+  }, [batterChoice, bowlerAllowed, canBoundary, canZero, phaseOrSession]);
 
   const playBall = () => {
     const result = simulateDelivery();
     setLastResult(result);
 
     setState((prev) => {
-      const newBatterBallsThisOver = (prev.batterBallsThisOver + 1) % 6;
-      const newBoundariesThisOver = newBatterBallsThisOver === 0 ? 0 : prev.boundariesThisOver;
-      const newConsecutiveZeros = result.batterChoice === 0 ? prev.consecutiveZeros + 1 : 0;
-      const newBoundariesCount = (result.batterChoice === 4 || result.batterChoice === 6) && !result.boundaryBlocked
-        ? prev.boundariesThisOver + 1
-        : prev.boundariesThisOver;
+      const newBatterBallsThisOver = (prev.batter.ballsThisOver + 1) % 6;
+      const isNewOver = newBatterBallsThisOver === 0;
+
+      const newBatter: BatterState = {
+        ...prev.batter,
+        runs: prev.batter.runs + (result.isWicket ? 0 : result.runs),
+        balls: prev.batter.balls + 1,
+        ballsThisOver: newBatterBallsThisOver,
+        boundariesThisOver: isNewOver ? 0 : prev.batter.boundariesThisOver,
+        consecutiveZeros: result.batterChoice === 0 ? prev.batter.consecutiveZeros + 1 : 0,
+        fours: prev.batter.fours + (result.batterChoice === 4 && !result.boundaryBlocked ? 1 : 0),
+        sixes: prev.batter.sixes + (result.batterChoice === 6 && !result.boundaryBlocked ? 1 : 0),
+      };
+
+      const newBowlerRuns = prev.bowler.runsConceded + result.runs;
+      const newBowlerBalls = prev.bowler.balls + 1;
+      const newBowlerCurrentOverRuns = prev.bowler.currentOverRuns + result.runs;
+      const newBowlerIsNewOver = newBowlerBalls % 6 === 0;
+
+      let newMaidenOvers = prev.bowler.maidenOvers;
+      let newLastOverMaiden = false;
+      let newZeroByBowler = prev.bowler.zeroByBowler;
+
+      if (newBowlerIsNewOver) {
+        newLastOverMaiden = prev.bowler.currentOverRuns === 0 && prev.bowler.balls > 0;
+        if (newLastOverMaiden) newMaidenOvers += 1;
+        if (newLastOverMaiden) newZeroByBowler = false;
+      }
+      if (result.runs > 0) {
+        newZeroByBowler = true;
+      }
+
+      const newTimeline = [...prev.bowler.timeline];
+      if (result.isWicket) newTimeline.push("W");
+      else newTimeline.push(String(result.runs));
+      if (newTimeline.length > 2) newTimeline.shift();
+
+      const newIsOnHatTrick = newTimeline.length === 2 && newTimeline[0] === "W" && newTimeline[1] === "W";
+
+      const newBowler: BowlerState = {
+        ...prev.bowler,
+        runsConceded: newBowlerRuns,
+        balls: newBowlerBalls,
+        wickets: prev.bowler.wickets + (result.isWicket ? 1 : 0),
+        maidenOvers: newMaidenOvers,
+        lastOverMaiden: newLastOverMaiden,
+        currentOverRuns: newBowlerIsNewOver ? 0 : newBowlerCurrentOverRuns,
+        isOnHatTrick: newIsOnHatTrick,
+        zeroByBowler: newZeroByBowler,
+        timeline: newTimeline,
+      };
+
+      const newInnings: InningsState = {
+        runs: prev.innings.runs + result.runs,
+        wickets: prev.innings.wickets + (result.isWicket ? 1 : 0),
+        balls: prev.innings.balls + 1,
+      };
 
       const newHistory = [
         ...prev.history,
         {
-          ball: prev.inningsBalls + 1,
+          ball: prev.innings.balls + 1,
           result,
-          batterRuns: prev.batterRuns + (result.isWicket ? 0 : result.runs),
-          batterBalls: prev.batterBalls + 1,
-          bowlerRuns: prev.bowlerRunsConceded + result.runs,
-          bowlerBalls: prev.bowlerBalls + 1,
-          bowlerWickets: prev.bowlerWickets + (result.isWicket ? 1 : 0),
-          totalRuns: prev.totalRuns + result.runs,
-          wickets: prev.wickets + (result.isWicket ? 1 : 0),
+          batterRuns: newBatter.runs,
+          batterBalls: newBatter.balls,
+          bowlerRuns: newBowler.runsConceded,
+          bowlerBalls: newBowler.balls,
+          bowlerWickets: newBowler.wickets,
+          totalRuns: newInnings.runs,
+          wickets: newInnings.wickets,
         },
       ];
 
       return {
         ...prev,
-        format: prev.format,
-        inningsBalls: prev.inningsBalls + 1,
-        batterBallsThisOver: newBatterBallsThisOver,
-        boundariesThisOver: newBoundariesCount,
-        consecutiveZeros: newConsecutiveZeros,
-        batterRuns: prev.batterRuns + (result.isWicket ? 0 : result.runs),
-        batterBalls: prev.batterBalls + 1,
-        bowlerRunsConceded: prev.bowlerRunsConceded + result.runs,
-        bowlerBalls: prev.bowlerBalls + 1,
-        bowlerWickets: prev.bowlerWickets + (result.isWicket ? 1 : 0),
-        wickets: prev.wickets + (result.isWicket ? 1 : 0),
-        totalRuns: prev.totalRuns + result.runs,
+        batter: newBatter,
+        bowler: newBowler,
+        innings: newInnings,
         history: newHistory,
       };
     });
 
     setBatterChoice(null);
-    setBowlerChoice(null);
   };
 
   const resetInnings = () => {
     setState(INITIAL_STATE);
     setLastResult(null);
     setBatterChoice(null);
-    setBowlerChoice(null);
   };
 
   const toggleFormat = () => {
@@ -247,13 +356,17 @@ export function Playground() {
     }
   };
 
+  const phaseLabel = state.format === "t15" 
+    ? `Phase ${phaseOrSession} / 3 · ${PHASES_T15[phaseOrSession - 1].name} · ${PHASES_T15[phaseOrSession - 1].boundaries} boundary${PHASES_T15[phaseOrSession - 1].boundaries !== 1 ? "s" : ""} per batter/over`
+    : `Session ${phaseOrSession} / 3`;
+
   return (
     <>
       <Helmet>
         <title>Playground · Ashes</title>
-        <meta name="description" content="Interactive playground to understand Ashes cricket mechanics. Simulate deliveries, learn the rules, and see how Test and T15 formats differ." />
+        <meta name="description" content="Interactive playground to understand Ashes cricket mechanics. Play as batter, bowler auto-selects. Learn Test and T15 rules." />
         <meta property="og:title" content="Playground · Ashes" />
-        <meta property="og:description" content="Interactive playground to understand Ashes cricket mechanics. Simulate deliveries, learn the rules, and see how Test and T15 formats differ." />
+        <meta property="og:description" content="Interactive playground to understand Ashes cricket mechanics. Play as batter, bowler auto-selects. Learn Test and T15 rules." />
       </Helmet>
 
       <div className="flex flex-col gap-12">
@@ -261,8 +374,8 @@ export function Playground() {
           <p className="label">Interactive playground</p>
           <h1 className="display mt-3 text-4xl sm:text-5xl">Understand the game</h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-paper-soft">
-            Ashes resolves every delivery by comparing two numbers — one from the batter, one from the bowler.
-            Pick numbers below to see how a ball plays out, or let the simulator choose at random.
+            You are the <strong>batter</strong>. Pick a number (0,1,2,3,4,6) — the bowler chooses automatically.
+            Same number = wicket. Different = you score your number. Learn the rules by playing.
           </p>
         </header>
 
@@ -275,7 +388,7 @@ export function Playground() {
               <p className="mt-1 text-sm text-paper-mute">
                 {state.format === "t15"
                   ? "Two innings of 15 overs. Boundary limits change by phase (PP/Middle/Death)."
-                  : "Four innings. One boundary per batter per over (two after 15 balls). Declarations and follow-on in play."}
+                  : "Four innings. 1 boundary/over until 15 balls faced in innings, then 2/over. Declarations & follow-on."}
               </p>
             </div>
             <button
@@ -296,27 +409,23 @@ export function Playground() {
             <div className="panel p-4">
               <p className="label">Over</p>
               <p className="display mt-1 text-3xl tabular-nums">{overs}</p>
-              <p className="mt-1 text-sm text-paper-mute">
-                {state.format === "t15"
-                  ? `Phase ${phase} / 3 · ${PHASES.t15.boundaries[phase - 1]} boundary${PHASES.t15.boundaries[phase - 1] !== 1 ? "s" : ""} per batter`
-                  : `Session ${phase} / 3 · 1 boundary per batter (2 after 15 balls)`}
-              </p>
+              <p className="mt-1 text-sm text-paper-mute">{phaseLabel}</p>
             </div>
             <div className="panel p-4">
               <p className="label">Batter</p>
-              <p className="display mt-1 text-3xl tabular-nums">{state.batterRuns} ({state.batterBalls})</p>
-              <p className="mt-1 text-sm text-paper-mute">SR: {batterSR}</p>
+              <p className="display mt-1 text-3xl tabular-nums">{state.batter.runs} ({state.batter.balls})</p>
+              <p className="mt-1 text-sm text-paper-mute">SR: {batterSR} · 4s: {state.batter.fours} · 6s: {state.batter.sixes}</p>
             </div>
             <div className="panel p-4">
               <p className="label">Bowler</p>
-              <p className="display mt-1 text-3xl tabular-nums">{state.bowlerRunsConceded}/{state.bowlerWickets} ({ballsToOvers(state.bowlerBalls)})</p>
-              <p className="mt-1 text-sm text-paper-mute">Econ: {bowlerEcon}</p>
+              <p className="display mt-1 text-3xl tabular-nums">{state.bowler.runsConceded}/{state.bowler.wickets} ({ballsToOvers(state.bowler.balls)})</p>
+              <p className="mt-1 text-sm text-paper-mute">Econ: {bowlerEcon} · Maidens: {state.bowler.maidenOvers}</p>
             </div>
             <div className="panel p-4">
               <p className="label">Innings</p>
-              <p className="display mt-1 text-3xl tabular-nums">{state.totalRuns}/{state.wickets}</p>
+              <p className="display mt-1 text-3xl tabular-nums">{state.innings.runs}/{state.innings.wickets}</p>
               <p className="mt-1 text-sm text-paper-mute">
-                {state.format === "t15" ? `${Math.max(0, 90 - state.inningsBalls)} balls left` : "Test — no ball limit"}
+                {state.format === "t15" ? `${Math.max(0, 90 - state.innings.balls)} balls left` : "Test — no ball limit"}
               </p>
             </div>
           </div>
@@ -327,10 +436,22 @@ export function Playground() {
                 {canBoundary ? "✓" : "✗"} Boundary available
               </span>
               <span className={`label ${canZero ? "text-paper" : "text-paper-mute"}`}>
-                {canZero ? "✓" : "✗"} Zero available ({state.consecutiveZeros}/3)
+                {canZero ? "✓" : "✗"} Zero available ({state.batter.consecutiveZeros}/3)
               </span>
-              <span className="label text-paper-mute">Balls this over: {state.batterBallsThisOver}/6</span>
-              <span className="label text-paper-mute">Boundaries this over: {state.boundariesThisOver}</span>
+              <span className="label text-paper-mute">Balls this over: {state.batter.ballsThisOver}/6</span>
+              <span className="label text-paper-mute">Boundaries this over: {state.batter.boundariesThisOver}</span>
+              {state.bowler.isOnHatTrick && (
+                <span className="label text-ball flex items-center gap-1">
+                  <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+                  Bowler on hat-trick — can bowl 0
+                </span>
+              )}
+              {state.innings.balls >= 6 && state.bowler.lastOverMaiden && !state.bowler.zeroByBowler && (
+                <span className="label text-lobby flex items-center gap-1">
+                  <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+                  Maiden over — bowler can bowl 0
+                </span>
+              )}
             </div>
           </div>
         </section>
@@ -341,23 +462,24 @@ export function Playground() {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-6">
               <div>
-                <h3 className="label mb-3">Batter chooses</h3>
+                <h3 className="label mb-3">Your shot (batter)</h3>
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Batter number choices">
-                  {VALID_NUMBERS.map((num) => (
-                    <button
-                      key={num}
-                      type="button"
-                      onClick={() => setBatterChoice(num)}
-                      aria-pressed={batterChoice === num}
-                      disabled={num === 0 && !canZero}
-                      disabled={num === 4 && !canBoundary}
-                      disabled={num === 6 && !canBoundary}
-                      className={`btn w-14 h-14 px-0 ${batterChoice === num ? "btn-solid" : "btn-quiet"} ${(!canZero && num === 0) || (!canBoundary && (num === 4 || num === 6)) ? "opacity-40 cursor-not-allowed" : ""}`}
-                      aria-label={`Batter chooses ${num}`}
-                    >
-                      {num}
-                    </button>
-                  ))}
+                  {VALID_NUMBERS.map((num) => {
+                    const disabled = (num === 0 && !canZero) || ((num === 4 || num === 6) && !canBoundary);
+                    return (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setBatterChoice(num)}
+                        aria-pressed={batterChoice === num}
+                        disabled={disabled}
+                        className={`btn w-14 h-14 px-0 ${batterChoice === num ? "btn-solid" : "btn-quiet"} ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                        aria-label={`Batter chooses ${num}`}
+                      >
+                        {num}
+                      </button>
+                    );
+                  })}
                 </div>
                 {batterChoice !== null && (
                   <p className="mt-2 text-sm text-paper-soft">Selected: <span className="font-mono text-paper">{batterChoice}</span></p>
@@ -376,35 +498,32 @@ export function Playground() {
                 )}
               </div>
 
-              <div>
-                <h3 className="label mb-3">Bowler chooses</h3>
-                <div className="flex flex-wrap gap-2" role="group" aria-label="Bowler number choices">
-                  {VALID_NUMBERS.map((num) => (
-                    <button
+              <div className="panel p-4 bg-ink-sunken">
+                <h3 className="label mb-3">Bowler (auto)</h3>
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Bowler number choices (auto)">
+                  {bowlerAllowed.map((num) => (
+                    <span
                       key={num}
-                      type="button"
-                      onClick={() => setBowlerChoice(num)}
-                      aria-pressed={bowlerChoice === num}
-                      className={`btn w-14 h-14 px-0 ${bowlerChoice === num ? "btn-solid" : "btn-quiet"}`}
-                      aria-label={`Bowler chooses ${num}`}
+                      className={`btn w-14 h-14 px-0 btn-quiet ${canBowlerChooseZero && num === 0 ? "text-ball border-ball/50" : ""}`}
+                      aria-label={`Bowler can choose ${num}`}
                     >
                       {num}
-                    </button>
+                    </span>
                   ))}
                 </div>
-                {bowlerChoice !== null && (
-                  <p className="mt-2 text-sm text-paper-soft">Selected: <span className="font-mono text-paper">{bowlerChoice}</span></p>
-                )}
+                <p className="mt-2 text-xs text-paper-mute">
+                  Bowler picks randomly from allowed numbers. 
+                  {canBowlerChooseZero ? "0 is allowed (hat-trick or maiden over)." : "0 not allowed."}
+                </p>
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   onClick={playBall}
-                  disabled={batterChoice === null && bowlerChoice === null}
                   className="btn btn-solid flex-1 justify-center gap-2"
                 >
                   <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                  Bowl ball {state.inningsBalls + 1}
+                  Bowl ball {state.innings.balls + 1}
                 </button>
                 <button onClick={resetInnings} className="btn btn-quiet">
                   Reset innings
@@ -427,10 +546,14 @@ export function Playground() {
                     </div>
                   </div>
                   <div className="panel p-4">
-                    const { label, className, icon } = getOutcomeLabel(lastResult);
-                    <div className="flex items-center justify-center gap-2">
-                      <span className={`display ${className}`}>{icon} {label}</span>
-                    </div>
+                    {(() => {
+                      const { label, className, icon } = getOutcomeLabel(lastResult);
+                      return (
+                        <div className="flex items-center justify-center gap-2">
+                          <span className={`display ${className}`}>{icon} {label}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <details className="group">
                     <summary className="details-summary flex items-center justify-between cursor-pointer text-sm text-paper-mute">
@@ -445,7 +568,7 @@ export function Playground() {
                         <p>Numbers differ ({lastResult.batterChoice} ≠ {lastResult.bowlerChoice}) → batter scores {lastResult.runs} run{lastResult.runs !== 1 ? "s" : ""}.</p>
                       )}
                       {lastResult.outcome === "runs" && lastResult.runs === 0 && (
-                        <p>Numbers differ, batter chose 0 → no runs scored. Consecutive zeros: {state.consecutiveZeros}/3.</p>
+                        <p>Numbers differ, batter chose 0 → no runs scored. Consecutive zeros: {state.batter.consecutiveZeros}/3.</p>
                       )}
                       {lastResult.boundaryBlocked && (
                         <p>Boundary limit reached for this batter this over → 4/6 reduced to 3 runs.</p>
@@ -525,6 +648,9 @@ export function Playground() {
                 <li>
                   <strong>Batter chooses 0:</strong> scores 0 runs (dot ball). Can't choose 0 more than 3 times consecutively — the 4th attempt scores 1 run instead.
                 </li>
+                <li>
+                  <strong>Bowler choices:</strong> 1,2,3,4,6 normally. <strong>0 only on hat-trick ball</strong> (previous 2 balls were wickets) or <strong>after a maiden over</strong> (first ball of new over, previous over 0 runs, no 0 bowled yet this innings).
+                </li>
               </ul>
             </article>
 
@@ -552,7 +678,7 @@ export function Playground() {
                       <strong>Four innings</strong> (three if a team wins by an innings). Host sets overs before toss.
                     </li>
                     <li>
-                      <strong>Boundary limit:</strong> 1 per batter per over (2 after the batter has faced 15 balls in that over).
+                      <strong>Boundary limit:</strong> 1 per batter per over until batter has faced 15 balls in the innings, then 2 per over.
                     </li>
                     <li>
                       <strong>Declarations</strong> allowed when ahead. <strong>Follow-on</strong> enforced if lead exceeds limit.
@@ -577,7 +703,7 @@ export function Playground() {
               { batter: 6, bowler: 2, desc: "Six hit → 6 runs (if boundary available)", format: "both" },
               { batter: 0, bowler: 4, desc: "Dot ball → 0 runs. Three dots in a row → next 0 scores 1", format: "both" },
               { batter: 4, bowler: 2, desc: "Boundary limit reached → 4 becomes 3 runs", format: "both" },
-              { batter: 1, bowler: 0, desc: "Quick single → 1 run. Good for rotating strike", format: "both" },
+              { batter: 1, bowler: 0, desc: "Quick single vs 0 (bowler on hat-trick/maiden)", format: "both" },
               { batter: 2, bowler: 4, desc: "Two runs → good for strike rotation in death overs", format: "t15" },
               { batter: 3, bowler: 0, desc: "Three runs → rare but valuable in Test cricket", format: "test" },
             ].filter((s) => s.format === "both" || s.format === state.format).map((scenario, i) => (
