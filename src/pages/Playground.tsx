@@ -58,12 +58,10 @@ function getBowlerAllowed(bowler: BowlerState, inningBalls: number): readonly Va
 interface DeliveryResult {
   batterChoice: ValidNumber;
   bowlerChoice: ValidNumber;
-  outcome: "runs" | "wicket" | "boundary-blocked" | "zero-blocked";
+  outcome: "runs" | "wicket";
   runs: number;
   isWicket: boolean;
   dismissal?: string;
-  boundaryBlocked?: boolean;
-  zeroBlocked?: boolean;
   phaseOrSession: number;
 }
 
@@ -154,7 +152,6 @@ export function Playground() {
   const [batterChoice, setBatterChoice] = useState<ValidNumber | null>(null);
   const [lastResult, setLastResult] = useState<DeliveryResult | null>(null);
   const [isBowling, setIsBowling] = useState(false);
-  const [showExplanation, setShowExplanation] = useState(false);
   const bowlTimeoutRef = useRef<number | null>(null);
 
   const phaseOrSession = useMemo(() => {
@@ -185,8 +182,6 @@ export function Playground() {
     let runs = 0;
     let isWicket = false;
     let dismissal: string | undefined;
-    let boundaryBlocked = false;
-    let zeroBlocked = false;
 
     if (bChoice === wChoice) {
       outcome = "wicket";
@@ -194,25 +189,7 @@ export function Playground() {
       dismissal = getRandomDismissal();
       runs = 0;
     } else {
-      if (bChoice === 0) {
-        if (!canZero) {
-          outcome = "zero-blocked";
-          zeroBlocked = true;
-          runs = 1;
-        } else {
-          runs = 0;
-        }
-      } else if (bChoice === 4 || bChoice === 6) {
-        if (!canBoundary) {
-          outcome = "boundary-blocked";
-          boundaryBlocked = true;
-          runs = 3;
-        } else {
-          runs = bChoice;
-        }
-      } else {
-        runs = bChoice;
-      }
+      runs = bChoice;
     }
 
     return {
@@ -222,8 +199,6 @@ export function Playground() {
       runs,
       isWicket,
       dismissal,
-      boundaryBlocked,
-      zeroBlocked,
       phaseOrSession,
     };
   }, [batterChoice, bowlerAllowed, canBoundary, canZero, phaseOrSession]);
@@ -233,7 +208,6 @@ export function Playground() {
     
     setIsBowling(true);
     
-    // Minor animation delay before revealing result
     bowlTimeoutRef.current = window.setTimeout(() => {
       const result = simulateDelivery();
       setLastResult(result);
@@ -249,8 +223,8 @@ export function Playground() {
           ballsThisOver: newBatterBallsThisOver,
           boundariesThisOver: isNewOver ? 0 : prev.batter.boundariesThisOver,
           consecutiveZeros: result.batterChoice === 0 ? prev.batter.consecutiveZeros + 1 : 0,
-          fours: prev.batter.fours + (result.batterChoice === 4 && !result.boundaryBlocked ? 1 : 0),
-          sixes: prev.batter.sixes + (result.batterChoice === 6 && !result.boundaryBlocked ? 1 : 0),
+          fours: prev.batter.fours + (result.batterChoice === 4 ? 1 : 0),
+          sixes: prev.batter.sixes + (result.batterChoice === 6 ? 1 : 0),
         };
 
         const newBowlerRuns = prev.bowler.runsConceded + result.runs;
@@ -326,14 +300,12 @@ export function Playground() {
     }, 600);
   }, [simulateDelivery, isBowling]);
 
-  // Auto-bowl when batter selects a number
   useEffect(() => {
     if (batterChoice !== null && !isBowling) {
       playBall();
     }
   }, [batterChoice, isBowling, playBall]);
 
-  // Cleanup timeout
   useEffect(() => {
     return () => {
       if (bowlTimeoutRef.current) {
@@ -365,18 +337,6 @@ export function Playground() {
           className: "text-ball",
           icon: <XCircle className="h-4 w-4" aria-hidden="true" />,
         };
-      case "boundary-blocked":
-        return {
-          label: `Boundary blocked → 3 runs`,
-          className: "text-t15",
-          icon: <AlertTriangle className="h-4 w-4" aria-hidden="true" />,
-        };
-      case "zero-blocked":
-        return {
-          label: `Third consecutive 0 blocked → 1 run`,
-          className: "text-lobby",
-          icon: <AlertTriangle className="h-4 w-4" aria-hidden="true" />,
-        };
       default:
         return {
           label: `${result.runs} run${result.runs !== 1 ? "s" : ""}`,
@@ -390,6 +350,12 @@ export function Playground() {
     ? `Phase ${phaseOrSession} / 3 · ${PHASES_T15[phaseOrSession - 1].name} · ${PHASES_T15[phaseOrSession - 1].boundaries} boundary${PHASES_T15[phaseOrSession - 1].boundaries !== 1 ? "s" : ""} per batter/over`
     : `Session ${phaseOrSession} / 3`;
 
+  const batterNumbers = VALID_NUMBERS.filter((num) => {
+    if (num === 0) return canZero;
+    if (num === 4 || num === 6) return canBoundary;
+    return true;
+  });
+
   return (
     <>
       <Helmet>
@@ -399,7 +365,7 @@ export function Playground() {
         <meta property="og:description" content="Interactive playground to understand Ashes cricket mechanics. Play as batter, bowler auto-selects. Learn Test and T15 rules." />
       </Helmet>
 
-      <div className="flex flex-col gap-12 max-w-[1200px] mx-auto w-full">
+      <div className="flex flex-col gap-12 max-w-[1200px] mx-auto w-full px-4">
         <header className="border-b border-rule pb-8">
           <p className="label">Interactive playground</p>
           <h1 className="display mt-3 text-4xl sm:text-5xl">Understand the game</h1>
@@ -410,7 +376,7 @@ export function Playground() {
         </header>
 
         <section aria-labelledby="format-toggle-heading" className="border-y border-rule py-6">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="min-w-0">
               <h2 id="format-toggle-heading" className="display text-2xl">
                 Format: <span className={`font-mono ${state.format === "t15" ? "text-t15" : "text-test"}`}>{state.format.toUpperCase()}</span>
@@ -490,51 +456,41 @@ export function Playground() {
           <h2 id="delivery-heading" className="label mb-4">Play a delivery</h2>
 
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-6">
+            <div className="space-y-6 min-w-0">
               <div>
                 <h3 className="label mb-3">Your shot (batter)</h3>
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Batter number choices">
-                  {VALID_NUMBERS.map((num) => {
-                    const disabled = (num === 0 && !canZero) || isBowling;
-                    return (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => { if (!isBowling) setBatterChoice(num); }}
-                        aria-pressed={batterChoice === num}
-                        disabled={disabled}
-                        className={`btn w-14 h-14 px-0 ${batterChoice === num ? "btn-solid" : "btn-quiet"} ${disabled ? "opacity-40 cursor-not-allowed" : ""} transition-all duration-150`}
-                        aria-label={`Batter chooses ${num}`}
-                      >
-                        {batterChoice === num && isBowling ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : num}
-                      </button>
-                    );
-                  })}
+                  {batterNumbers.map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => { if (!isBowling) setBatterChoice(num); }}
+                      aria-pressed={batterChoice === num}
+                      disabled={isBowling}
+                      className={`btn w-14 h-14 px-0 ${batterChoice === num ? "btn-solid" : "btn-quiet"} ${isBowling ? "opacity-40 cursor-not-allowed" : ""} transition-all duration-150`}
+                      aria-label={`Batter chooses ${num}`}
+                    >
+                      {batterChoice === num && isBowling ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : num}
+                    </button>
+                  ))}
+                  {(!canZero || !canBoundary) && (
+                    <span className="btn w-14 h-14 px-0 opacity-20 cursor-not-allowed" aria-hidden="true">—</span>
+                  )}
                 </div>
-                {batterChoice !== null && !isBowling && (
-                  <p className="mt-2 text-sm text-paper-soft">Selected: <span className="font-mono text-paper">{batterChoice}</span> — bowling...</p>
-                )}
-                {!canZero && !isBowling && (
-                  <p className="mt-2 text-sm text-lobby flex items-center gap-1">
-                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-                    Third consecutive 0 blocked — would score 1 run instead
-                  </p>
-                )}
-                {!canBoundary && !isBowling && (
-                  <p className="mt-2 text-sm text-t15 flex items-center gap-1">
-                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-                    Boundary limit reached — 4/6 would score 3 runs instead
-                  </p>
-                )}
+                <p className="mt-2 text-xs text-paper-mute">
+                  Valid: {batterNumbers.join(", ")}. 
+                  {!canBoundary && "4/6 unavailable (boundary limit reached)."}
+                  {!canZero && " 0 unavailable (3 consecutive dots)."}
+                </p>
               </div>
 
-              <div className="panel p-4 bg-ink-sunken">
+              <div className="panel p-4 bg-ink-sunken min-w-0">
                 <h3 className="label mb-3">Bowler (auto)</h3>
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Bowler number choices (auto)">
                   {bowlerAllowed.map((num) => (
                     <span
                       key={num}
-                      className={`btn w-14 h-14 px-0 btn-quiet ${canBowlerChooseZero && num === 0 ? "text-ball border-ball/50" : ""} ${isBowling && num === (lastResult?.bowlerChoice ?? -1) ? "bg-ball/20 border-ball" : ""} transition-all duration-150`}
+                      className={`btn w-14 h-14 px-0 btn-quiet ${canBowlerChooseZero && num === 0 ? "text-ball border-ball/50" : ""} ${isBowling && lastResult?.bowlerChoice === num ? "bg-ball/20 border-ball" : ""} transition-all duration-150`}
                       aria-label={`Bowler can choose ${num}`}
                     >
                       {num}
@@ -557,26 +513,26 @@ export function Playground() {
               </div>
             </div>
 
-            <aside className="border-l border-rule pl-6 lg:pl-8">
+            <aside className="border-l border-rule pl-4 lg:pl-6 min-w-0 max-w-[320px] w-full lg:w-auto flex-shrink-0">
               <h3 className="label mb-4">Last delivery</h3>
               {lastResult ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div className="panel p-4">
+                <div className="space-y-4 min-w-0">
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div className="panel p-4 min-w-0">
                       <p className="label">Batter</p>
-                      <p className="display mt-2 text-4xl">{lastResult.batterChoice}</p>
+                      <p className="display mt-2 text-3xl">{lastResult.batterChoice}</p>
                     </div>
-                    <div className="panel p-4">
+                    <div className="panel p-4 min-w-0">
                       <p className="label">Bowler</p>
-                      <p className="display mt-2 text-4xl">{lastResult.bowlerChoice}</p>
+                      <p className="display mt-2 text-3xl">{lastResult.bowlerChoice}</p>
                     </div>
                   </div>
-                  <div className="panel p-4">
+                  <div className="panel p-4 min-w-0">
                     {(() => {
                       const { label, className, icon } = getOutcomeLabel(lastResult);
                       return (
-                        <div className="flex items-center justify-center gap-2">
-                          <span className={`display ${className}`}>{icon} {label}</span>
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          <span className={`display ${className} whitespace-nowrap`}>{icon} {label}</span>
                         </div>
                       );
                     })()}
@@ -584,23 +540,14 @@ export function Playground() {
                   <details className="group">
                     <summary className="details-summary flex items-center justify-between cursor-pointer text-sm text-paper-mute">
                       <span>Why this result?</span>
-                      <Info className="h-4 w-4 transition-transform group-open:rotate-90" aria-hidden="true" />
+                      <Info className="h-4 w-4 transition-transform group-open:rotate-90 flex-shrink-0" aria-hidden="true" />
                     </summary>
                     <div className="mt-3 text-sm text-paper-soft space-y-2">
                       {lastResult.outcome === "wicket" && (
                         <p>Numbers match ({lastResult.batterChoice} = {lastResult.bowlerChoice}) → batter is out ({lastResult.dismissal}).</p>
                       )}
-                      {lastResult.outcome === "runs" && lastResult.runs > 0 && (
+                      {lastResult.outcome === "runs" && (
                         <p>Numbers differ ({lastResult.batterChoice} ≠ {lastResult.bowlerChoice}) → batter scores {lastResult.runs} run{lastResult.runs !== 1 ? "s" : ""}.</p>
-                      )}
-                      {lastResult.outcome === "runs" && lastResult.runs === 0 && (
-                        <p>Numbers differ, batter chose 0 → no runs scored. Consecutive zeros: {state.batter.consecutiveZeros}/3.</p>
-                      )}
-                      {lastResult.boundaryBlocked && (
-                        <p>Boundary limit reached for this batter this over → 4/6 reduced to 3 runs.</p>
-                      )}
-                      {lastResult.zeroBlocked && (
-                        <p>Third consecutive 0 blocked → scores 1 run instead of 0.</p>
                       )}
                     </div>
                   </details>
@@ -610,10 +557,10 @@ export function Playground() {
               )}
 
               {state.history.length > 0 && (
-                <div className="mt-6">
+                <div className="mt-6 min-w-0">
                   <h3 className="label mb-3">Recent deliveries</h3>
-                  <div className="scroll-x max-h-64 overflow-y-auto">
-                    <table className="data-table text-xs">
+                  <div className="overflow-x-auto max-h-64">
+                    <table className="data-table text-xs min-w-max">
                       <thead>
                         <tr>
                           <th>Ball</th>
@@ -634,10 +581,6 @@ export function Playground() {
                             <td>
                               {h.result.isWicket ? (
                                 <span className="text-ball">W</span>
-                              ) : h.result.boundaryBlocked ? (
-                                <span className="text-t15">4/6→3</span>
-                              ) : h.result.zeroBlocked ? (
-                                <span className="text-lobby">0→1</span>
                               ) : (
                                 <span className="num">{h.result.runs}</span>
                               )}
@@ -672,13 +615,13 @@ export function Playground() {
                   <strong>Different numbers:</strong> batter scores their chosen number.
                 </li>
                 <li>
-                  <strong>Batter chooses 0:</strong> scores 0 runs (dot ball). Can't choose 0 more than 3 times consecutively — the 4th attempt scores 1 run instead.
+                  <strong>Batter chooses 0:</strong> scores 0 runs (dot ball). Can't choose 0 more than 3 times consecutively — 4th 0 is not allowed.
                 </li>
                 <li>
                   <strong>Bowler choices:</strong> 1,2,3,4,6 normally. <strong>0 only on hat-trick ball</strong> (previous 2 balls were wickets) or <strong>after a maiden over</strong> (first ball of new over, previous over 0 runs, no 0 bowled yet this innings).
                 </li>
                 <li>
-                  <strong>Boundary limit:</strong> When reached, 4 or 6 scores 3 runs instead (not blocked).
+                  <strong>Boundary limit:</strong> When reached, 4 and 6 are not available as options.
                 </li>
               </ul>
             </article>
@@ -730,18 +673,18 @@ export function Playground() {
               { batter: 3, bowler: 3, desc: "Numbers match → wicket (bowled/caught/LBW/run out/stumped)", format: "both" },
               { batter: 4, bowler: 1, desc: "Boundary hit → 4 runs (if boundary available)", format: "both" },
               { batter: 6, bowler: 2, desc: "Six hit → 6 runs (if boundary available)", format: "both" },
-              { batter: 0, bowler: 4, desc: "Dot ball → 0 runs. Three dots in a row → next 0 scores 1", format: "both" },
-              { batter: 4, bowler: 2, desc: "Boundary limit reached → 4 becomes 3 runs", format: "both" },
+              { batter: 0, bowler: 4, desc: "Dot ball → 0 runs. Three dots in a row → next 0 not allowed", format: "both" },
+              { batter: 4, bowler: 2, desc: "Boundary limit reached → 4/6 not available", format: "both" },
               { batter: 1, bowler: 0, desc: "Quick single vs 0 (bowler on hat-trick/maiden)", format: "both" },
               { batter: 2, bowler: 4, desc: "Two runs → good for strike rotation in death overs", format: "t15" },
               { batter: 3, bowler: 0, desc: "Three runs → rare but valuable in Test cricket", format: "test" },
             ].filter((s) => s.format === "both" || s.format === state.format).map((scenario, i) => (
-              <div key={i} className="panel p-4">
-                <div className="flex items-center justify-between gap-4 mb-3">
+              <div key={i} className="panel p-4 min-w-0">
+                <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <span className="btn btn-solid w-10 h-10 px-0">{scenario.batter}</span>
+                    <span className="btn btn-solid w-10 h-10 px-0 flex-shrink-0">{scenario.batter}</span>
                     <span className="label text-paper-mute">vs</span>
-                    <span className="btn btn-quiet w-10 h-10 px-0">{scenario.bowler}</span>
+                    <span className="btn btn-quiet w-10 h-10 px-0 flex-shrink-0">{scenario.bowler}</span>
                   </div>
                   <ArrowRight className="h-5 w-5 text-ball shrink-0" aria-hidden="true" />
                 </div>
