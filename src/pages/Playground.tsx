@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
-import { useState, useCallback, useMemo } from "react";
-import { ArrowRight, RefreshCw, Info, AlertTriangle, CheckCircle, XCircle, Zap } from "lucide-react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { ArrowRight, RefreshCw, Info, AlertTriangle, CheckCircle, XCircle, Zap, Loader2 } from "lucide-react";
 import { FormatBadge } from "../components/MatchFormat";
 
 const VALID_NUMBERS = [0, 1, 2, 3, 4, 6] as const;
@@ -142,7 +142,7 @@ const INITIAL_INNINGS: InningsState = {
 };
 
 const INITIAL_STATE: PlaygroundState = {
-  format: "t15",
+  format: "test",
   batter: INITIAL_BATTER,
   bowler: INITIAL_BOWLER,
   innings: INITIAL_INNINGS,
@@ -153,7 +153,9 @@ export function Playground() {
   const [state, setState] = useState<PlaygroundState>(INITIAL_STATE);
   const [batterChoice, setBatterChoice] = useState<ValidNumber | null>(null);
   const [lastResult, setLastResult] = useState<DeliveryResult | null>(null);
+  const [isBowling, setIsBowling] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const bowlTimeoutRef = useRef<number | null>(null);
 
   const phaseOrSession = useMemo(() => {
     if (state.format === "t15") return getPhaseT15(state.innings.balls);
@@ -226,100 +228,128 @@ export function Playground() {
     };
   }, [batterChoice, bowlerAllowed, canBoundary, canZero, phaseOrSession]);
 
-  const playBall = () => {
-    const result = simulateDelivery();
-    setLastResult(result);
+  const playBall = useCallback(() => {
+    if (isBowling) return;
+    
+    setIsBowling(true);
+    
+    // Minor animation delay before revealing result
+    bowlTimeoutRef.current = window.setTimeout(() => {
+      const result = simulateDelivery();
+      setLastResult(result);
 
-    setState((prev) => {
-      const newBatterBallsThisOver = (prev.batter.ballsThisOver + 1) % 6;
-      const isNewOver = newBatterBallsThisOver === 0;
+      setState((prev) => {
+        const newBatterBallsThisOver = (prev.batter.ballsThisOver + 1) % 6;
+        const isNewOver = newBatterBallsThisOver === 0;
 
-      const newBatter: BatterState = {
-        ...prev.batter,
-        runs: prev.batter.runs + (result.isWicket ? 0 : result.runs),
-        balls: prev.batter.balls + 1,
-        ballsThisOver: newBatterBallsThisOver,
-        boundariesThisOver: isNewOver ? 0 : prev.batter.boundariesThisOver,
-        consecutiveZeros: result.batterChoice === 0 ? prev.batter.consecutiveZeros + 1 : 0,
-        fours: prev.batter.fours + (result.batterChoice === 4 && !result.boundaryBlocked ? 1 : 0),
-        sixes: prev.batter.sixes + (result.batterChoice === 6 && !result.boundaryBlocked ? 1 : 0),
-      };
+        const newBatter: BatterState = {
+          ...prev.batter,
+          runs: prev.batter.runs + (result.isWicket ? 0 : result.runs),
+          balls: prev.batter.balls + 1,
+          ballsThisOver: newBatterBallsThisOver,
+          boundariesThisOver: isNewOver ? 0 : prev.batter.boundariesThisOver,
+          consecutiveZeros: result.batterChoice === 0 ? prev.batter.consecutiveZeros + 1 : 0,
+          fours: prev.batter.fours + (result.batterChoice === 4 && !result.boundaryBlocked ? 1 : 0),
+          sixes: prev.batter.sixes + (result.batterChoice === 6 && !result.boundaryBlocked ? 1 : 0),
+        };
 
-      const newBowlerRuns = prev.bowler.runsConceded + result.runs;
-      const newBowlerBalls = prev.bowler.balls + 1;
-      const newBowlerCurrentOverRuns = prev.bowler.currentOverRuns + result.runs;
-      const newBowlerIsNewOver = newBowlerBalls % 6 === 0;
+        const newBowlerRuns = prev.bowler.runsConceded + result.runs;
+        const newBowlerBalls = prev.bowler.balls + 1;
+        const newBowlerCurrentOverRuns = prev.bowler.currentOverRuns + result.runs;
+        const newBowlerIsNewOver = newBowlerBalls % 6 === 0;
 
-      let newMaidenOvers = prev.bowler.maidenOvers;
-      let newLastOverMaiden = false;
-      let newZeroByBowler = prev.bowler.zeroByBowler;
+        let newMaidenOvers = prev.bowler.maidenOvers;
+        let newLastOverMaiden = false;
+        let newZeroByBowler = prev.bowler.zeroByBowler;
 
-      if (newBowlerIsNewOver) {
-        newLastOverMaiden = prev.bowler.currentOverRuns === 0 && prev.bowler.balls > 0;
-        if (newLastOverMaiden) newMaidenOvers += 1;
-        if (newLastOverMaiden) newZeroByBowler = false;
+        if (newBowlerIsNewOver) {
+          newLastOverMaiden = prev.bowler.currentOverRuns === 0 && prev.bowler.balls > 0;
+          if (newLastOverMaiden) newMaidenOvers += 1;
+          if (newLastOverMaiden) newZeroByBowler = false;
+        }
+        if (result.runs > 0) {
+          newZeroByBowler = true;
+        }
+
+        const newTimeline = [...prev.bowler.timeline];
+        if (result.isWicket) newTimeline.push("W");
+        else newTimeline.push(String(result.runs));
+        if (newTimeline.length > 2) newTimeline.shift();
+
+        const newIsOnHatTrick = newTimeline.length === 2 && newTimeline[0] === "W" && newTimeline[1] === "W";
+
+        const newBowler: BowlerState = {
+          ...prev.bowler,
+          runsConceded: newBowlerRuns,
+          balls: newBowlerBalls,
+          wickets: prev.bowler.wickets + (result.isWicket ? 1 : 0),
+          maidenOvers: newMaidenOvers,
+          lastOverMaiden: newLastOverMaiden,
+          currentOverRuns: newBowlerIsNewOver ? 0 : newBowlerCurrentOverRuns,
+          isOnHatTrick: newIsOnHatTrick,
+          zeroByBowler: newZeroByBowler,
+          timeline: newTimeline,
+        };
+
+        const newInnings: InningsState = {
+          runs: prev.innings.runs + result.runs,
+          wickets: prev.innings.wickets + (result.isWicket ? 1 : 0),
+          balls: prev.innings.balls + 1,
+        };
+
+        const newHistory = [
+          ...prev.history,
+          {
+            ball: prev.innings.balls + 1,
+            result,
+            batterRuns: newBatter.runs,
+            batterBalls: newBatter.balls,
+            bowlerRuns: newBowler.runsConceded,
+            bowlerBalls: newBowler.balls,
+            bowlerWickets: newBowler.wickets,
+            totalRuns: newInnings.runs,
+            wickets: newInnings.wickets,
+          },
+        ];
+
+        return {
+          ...prev,
+          batter: newBatter,
+          bowler: newBowler,
+          innings: newInnings,
+          history: newHistory,
+        };
+      });
+
+      setBatterChoice(null);
+      setIsBowling(false);
+    }, 600);
+  }, [simulateDelivery, isBowling]);
+
+  // Auto-bowl when batter selects a number
+  useEffect(() => {
+    if (batterChoice !== null && !isBowling) {
+      playBall();
+    }
+  }, [batterChoice, isBowling, playBall]);
+
+  // Cleanup timeout
+  useEffect(() => {
+    return () => {
+      if (bowlTimeoutRef.current) {
+        window.clearTimeout(bowlTimeoutRef.current);
       }
-      if (result.runs > 0) {
-        newZeroByBowler = true;
-      }
-
-      const newTimeline = [...prev.bowler.timeline];
-      if (result.isWicket) newTimeline.push("W");
-      else newTimeline.push(String(result.runs));
-      if (newTimeline.length > 2) newTimeline.shift();
-
-      const newIsOnHatTrick = newTimeline.length === 2 && newTimeline[0] === "W" && newTimeline[1] === "W";
-
-      const newBowler: BowlerState = {
-        ...prev.bowler,
-        runsConceded: newBowlerRuns,
-        balls: newBowlerBalls,
-        wickets: prev.bowler.wickets + (result.isWicket ? 1 : 0),
-        maidenOvers: newMaidenOvers,
-        lastOverMaiden: newLastOverMaiden,
-        currentOverRuns: newBowlerIsNewOver ? 0 : newBowlerCurrentOverRuns,
-        isOnHatTrick: newIsOnHatTrick,
-        zeroByBowler: newZeroByBowler,
-        timeline: newTimeline,
-      };
-
-      const newInnings: InningsState = {
-        runs: prev.innings.runs + result.runs,
-        wickets: prev.innings.wickets + (result.isWicket ? 1 : 0),
-        balls: prev.innings.balls + 1,
-      };
-
-      const newHistory = [
-        ...prev.history,
-        {
-          ball: prev.innings.balls + 1,
-          result,
-          batterRuns: newBatter.runs,
-          batterBalls: newBatter.balls,
-          bowlerRuns: newBowler.runsConceded,
-          bowlerBalls: newBowler.balls,
-          bowlerWickets: newBowler.wickets,
-          totalRuns: newInnings.runs,
-          wickets: newInnings.wickets,
-        },
-      ];
-
-      return {
-        ...prev,
-        batter: newBatter,
-        bowler: newBowler,
-        innings: newInnings,
-        history: newHistory,
-      };
-    });
-
-    setBatterChoice(null);
-  };
+    };
+  }, []);
 
   const resetInnings = () => {
+    if (bowlTimeoutRef.current) {
+      window.clearTimeout(bowlTimeoutRef.current);
+    }
     setState(INITIAL_STATE);
     setLastResult(null);
     setBatterChoice(null);
+    setIsBowling(false);
   };
 
   const toggleFormat = () => {
@@ -369,7 +399,7 @@ export function Playground() {
         <meta property="og:description" content="Interactive playground to understand Ashes cricket mechanics. Play as batter, bowler auto-selects. Learn Test and T15 rules." />
       </Helmet>
 
-      <div className="flex flex-col gap-12">
+      <div className="flex flex-col gap-12 max-w-[1200px] mx-auto w-full">
         <header className="border-b border-rule pb-8">
           <p className="label">Interactive playground</p>
           <h1 className="display mt-3 text-4xl sm:text-5xl">Understand the game</h1>
@@ -465,32 +495,32 @@ export function Playground() {
                 <h3 className="label mb-3">Your shot (batter)</h3>
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Batter number choices">
                   {VALID_NUMBERS.map((num) => {
-                    const disabled = (num === 0 && !canZero) || ((num === 4 || num === 6) && !canBoundary);
+                    const disabled = (num === 0 && !canZero) || isBowling;
                     return (
                       <button
                         key={num}
                         type="button"
-                        onClick={() => setBatterChoice(num)}
+                        onClick={() => { if (!isBowling) setBatterChoice(num); }}
                         aria-pressed={batterChoice === num}
                         disabled={disabled}
-                        className={`btn w-14 h-14 px-0 ${batterChoice === num ? "btn-solid" : "btn-quiet"} ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                        className={`btn w-14 h-14 px-0 ${batterChoice === num ? "btn-solid" : "btn-quiet"} ${disabled ? "opacity-40 cursor-not-allowed" : ""} transition-all duration-150`}
                         aria-label={`Batter chooses ${num}`}
                       >
-                        {num}
+                        {batterChoice === num && isBowling ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : num}
                       </button>
                     );
                   })}
                 </div>
-                {batterChoice !== null && (
-                  <p className="mt-2 text-sm text-paper-soft">Selected: <span className="font-mono text-paper">{batterChoice}</span></p>
+                {batterChoice !== null && !isBowling && (
+                  <p className="mt-2 text-sm text-paper-soft">Selected: <span className="font-mono text-paper">{batterChoice}</span> — bowling...</p>
                 )}
-                {!canZero && (
+                {!canZero && !isBowling && (
                   <p className="mt-2 text-sm text-lobby flex items-center gap-1">
                     <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
                     Third consecutive 0 blocked — would score 1 run instead
                   </p>
                 )}
-                {!canBoundary && (
+                {!canBoundary && !isBowling && (
                   <p className="mt-2 text-sm text-t15 flex items-center gap-1">
                     <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
                     Boundary limit reached — 4/6 would score 3 runs instead
@@ -504,7 +534,7 @@ export function Playground() {
                   {bowlerAllowed.map((num) => (
                     <span
                       key={num}
-                      className={`btn w-14 h-14 px-0 btn-quiet ${canBowlerChooseZero && num === 0 ? "text-ball border-ball/50" : ""}`}
+                      className={`btn w-14 h-14 px-0 btn-quiet ${canBowlerChooseZero && num === 0 ? "text-ball border-ball/50" : ""} ${isBowling && num === (lastResult?.bowlerChoice ?? -1) ? "bg-ball/20 border-ball" : ""} transition-all duration-150`}
                       aria-label={`Bowler can choose ${num}`}
                     >
                       {num}
@@ -519,13 +549,9 @@ export function Playground() {
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
-                  onClick={playBall}
-                  className="btn btn-solid flex-1 justify-center gap-2"
+                  onClick={resetInnings}
+                  className="btn btn-quiet"
                 >
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                  Bowl ball {state.innings.balls + 1}
-                </button>
-                <button onClick={resetInnings} className="btn btn-quiet">
                   Reset innings
                 </button>
               </div>
@@ -650,6 +676,9 @@ export function Playground() {
                 </li>
                 <li>
                   <strong>Bowler choices:</strong> 1,2,3,4,6 normally. <strong>0 only on hat-trick ball</strong> (previous 2 balls were wickets) or <strong>after a maiden over</strong> (first ball of new over, previous over 0 runs, no 0 bowled yet this innings).
+                </li>
+                <li>
+                  <strong>Boundary limit:</strong> When reached, 4 or 6 scores 3 runs instead (not blocked).
                 </li>
               </ul>
             </article>
