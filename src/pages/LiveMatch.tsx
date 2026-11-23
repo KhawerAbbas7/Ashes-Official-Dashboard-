@@ -353,39 +353,8 @@ export function LiveMatch() {
       </div>
 
       {activeRootTab === "live" && (
-        <div className="grid gap-10 pt-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.85fr)]">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="display text-2xl">Commentary</h2>
-              <span className="label">Latest {Math.min(commentary.length, 12)} balls</span>
-            </div>
-            <div className="mt-3 border-t border-rule">
-              {commentary.length === 0 ? (
-                <p className="py-6 text-sm text-paper-mute">No deliveries logged yet.</p>
-              ) : (
-                commentary.slice(0, 12).map((entry: any, index: number) => {
-                  const ball = entry.ball || entry.over || "";
-                  const text = entry.text || entry.commentary || String(entry);
-                  const tone = commentaryTone(text);
-
-                  return (
-                    <div
-                      key={index}
-                      className={`grid grid-cols-[auto_minmax(0,1fr)] gap-4 border-b border-l-2 border-b-rule-soft py-3 pl-4 ${tone.border} ${tone.background}`}
-                    >
-                      <span className="num text-xs leading-relaxed text-paper-mute">{ball || "—"}</span>
-                      <div className="min-w-0">
-                        {tone.label && <p className={`label mb-1 ${tone.labelClass}`}>{tone.label}</p>}
-                        <p className={`text-sm leading-relaxed ${tone.text}`}>{text}</p>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          <aside className="min-w-0 border-t border-rule pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+        <div className="grid gap-10 pt-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.55fr)]">
+          <aside className="min-w-0 border-t border-rule pt-5 lg:border-r lg:border-t-0 lg:pr-6 lg:pt-0">
             <h2 className="display text-2xl">At the crease</h2>
             {batters.length === 0 ? (
               <p className="mt-3 border-t border-rule py-4 text-sm text-paper-mute">Awaiting play.</p>
@@ -482,6 +451,37 @@ export function LiveMatch() {
               </ul>
             )}
           </aside>
+
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="display text-2xl">Commentary</h2>
+              <span className="label">Latest {Math.min(commentary.length, 12)} balls</span>
+            </div>
+            <div className="mt-3 border-t border-rule">
+              {commentary.length === 0 ? (
+                <p className="py-6 text-sm text-paper-mute">No deliveries logged yet.</p>
+              ) : (
+                commentary.slice(0, 12).map((entry: any, index: number) => {
+                  const ball = entry.ball || entry.over || "";
+                  const text = entry.text || entry.commentary || String(entry);
+                  const tone = commentaryTone(text);
+
+                  return (
+                    <div
+                      key={index}
+                      className={`grid grid-cols-[auto_minmax(0,1fr)] gap-4 border-b border-l-2 border-b-rule-soft py-3 pl-4 ${tone.border} ${tone.background}`}
+                    >
+                      <span className="num text-xs leading-relaxed text-paper-mute">{ball || "—"}</span>
+                      <div className="min-w-0">
+                        {tone.label && <p className={`label mb-1 ${tone.labelClass}`}>{tone.label}</p>}
+                        <p className={`text-sm leading-relaxed ${tone.text}`}>{text}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       )}
 
